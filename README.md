@@ -1,6 +1,7 @@
 # Verodat MCP Layer Architecture Diagram
 
-![image](https://github.com/user-attachments/assets/3778fae4-2e84-470c-b5a9-a79a6f3dc1ce)
+![image (1)](https://github.com/user-attachments/assets/f3432470-5456-451b-b8eb-49696d77e3fa)
+
 
 
 
