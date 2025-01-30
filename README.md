@@ -1,6 +1,7 @@
 # Verodat MCP Layer Architecture Diagram
 
-![image](https://github.com/user-attachments/assets/ee0afd3a-a2c0-4c54-86ba-8122b88af02e)
+![image](https://github.com/user-attachments/assets/3778fae4-2e84-470c-b5a9-a79a6f3dc1ce)
+
 
 
 # Model Context Protocol and Verodat
