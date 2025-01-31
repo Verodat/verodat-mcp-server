@@ -1,10 +1,10 @@
 # Verodat MCP Server 
 [![MCP](https://img.shields.io/badge/MCP-Server-blue.svg)](https://github.com/modelcontextprotocol)
 
-![image](https://github.com/user-attachments/assets/ec26c3e1-077f-46bb-915d-690cfde0833e)
-
-
+## Overview
 A Model Context Protocol (MCP) server implementation for [Verodat](https://verodat.io), enabling seamless integration of Verodat's data management capabilities with AI systems like Claude Desktop.
+
+![image](https://github.com/user-attachments/assets/ec26c3e1-077f-46bb-915d-690cfde0833e)
 
 ## Features
 
