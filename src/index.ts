@@ -243,6 +243,16 @@ const ExecuteAIQueryArgumentsSchema = z.object({
     query: z.string()
 });
 
+const GetDatasetTargetFieldsArgumentsSchema = z.object({
+    accountId: z.number().int().positive(),
+    workspaceId: z.number().int().positive(),
+    datasetId: z.number().int().positive(),
+    offset: z.number().default(0),
+    max: z.number().default(1000),
+    filter: z.string().optional(),
+    sort: z.string().optional()
+});
+
 interface ServerConfig {
     authToken?: string;
 }
@@ -623,6 +633,76 @@ Example usage:
                     },
                     required: ["accountId", "workspaceId", "query"],
                 },
+            },
+            {
+                name: "get-dataset-targetfields",
+                description: `WHEN TO USE:
+            - When you need to retrieve and inspect all target fields/columns defined in a dataset
+            - When you need to understand the complete schema structure of a dataset
+            - When validating field configurations and their data types (string, number, etc.)
+            - When checking which fields are mandatory versus optional in the dataset
+            - When reviewing field descriptions and metadata
+            - When needing to check field properties like isKeyComponent and isCompound
+            - When reviewing field naming conventions and SQL names
+            
+            Tool Description:
+            Retrieves target fields configuration for a specific dataset with filtering and sorting capabilities.
+            
+            Required parameters:
+            - accountId: Account ID where the workspace belongs
+            - workspaceId: Workspace ID containing the dataset
+            - datasetId: Dataset ID to fetch target fields from
+            
+            Optional parameters:
+            - max: Maximum records to return (default: 1000)
+            - offset: Pagination offset (default: 0)
+            - filter: Filter string with prefix 'name contains ' for target fields (e.g., "name contains 'count'", "name contains 'first'", "name contains 'last'")
+            - sort: Sort criteria with optional direction (e.g., "name,asc", "datatype,desc", "description,asc", "mandatory,asc", "isKeyComponent,desc", "isCompound,asc")
+            
+            Example usage:
+            {
+              "accountId": 123,
+              "workspaceId": 178,
+              "datasetId": 3328,
+              "filter": "name contains 'count'",
+              "sort": "name,desc"
+            }`,
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        accountId: {
+                            type: "number",
+                            description: "Account ID where the workspace belongs",
+                        },
+                        workspaceId: {
+                            type: "number",
+                            description: "Workspace ID containing the dataset",
+                        },
+                        datasetId: {
+                            type: "number",
+                            description: "Dataset ID to fetch target fields from",
+                        },
+                        offset: {
+                            type: "number",
+                            description: "Offset for pagination",
+                            default: 0
+                        },
+                        max: {
+                            type: "number",
+                            description: "Maximum number of records to return",
+                            default: 1000
+                        },
+                        filter: {
+                            type: "string",
+                            description: "Filter string for target fields"
+                        },
+                        sort: {
+                            type: "string",
+                            description: "Sort criteria with optional direction"
+                        }
+                    },
+                    required: ["workspaceId", "datasetId", "accountId"],
+                },
             }
         ],
     };
@@ -939,6 +1019,60 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             };
 
             const { data, error } = await makeAPIRequest<any>(url, "POST", headers, payload);
+
+            if (error) {
+                return {
+                    content: [
+                        {
+                            type: "error",
+                            text: error.toString(),
+                        },
+                    ],
+                };
+            }
+
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: data.toString(),
+                    },
+                ],
+            };
+        }
+        else if (name === "get-dataset-targetfields") {
+            const {
+                accountId,
+                workspaceId,
+                datasetId,
+                offset,
+                max,
+                filter,
+                sort
+            } = GetDatasetTargetFieldsArgumentsSchema.parse(args);
+
+            const useableAuthToken = getAuthToken("get-dataset-targetfields");
+
+            const queryParams = new URLSearchParams({
+                offset: offset.toString(),
+                max: max.toString(),
+            });
+
+            if (filter) {
+                queryParams.append('filter', filter);
+            }
+            if (sort) {
+                queryParams.append('sort', sort);
+            }
+
+            const url = `${API_BASE_URL}/ai/accounts/${accountId}/workspaces/${workspaceId}/datasets/${datasetId}/targetfields?${queryParams}`;
+            const headers = {
+                Authorization: `ApiKey ${useableAuthToken}`,
+                "Content-Type": "application/json",
+                "Accept": "application/json, text/plain, */*"
+            };
+
+            const { data, error } = await makeAPIRequest<any>(url, "GET", headers);
 
             if (error) {
                 return {
