@@ -56,7 +56,7 @@ A Model Context Protocol (MCP) server implementation for [Verodat](https://verod
                 "command": "node",
                 "args": ["addlocalpath\\verodat-mcp-server\\build\\src\\consume.js"],
                 "env": {
-                  "VERODAT_AI_API_KEY": "HStV8TgSwoDvpz5Wb3lA4q3Z5vNcVLOa",
+                  "VERODAT_AI_API_KEY": "API-KEY",
                   "NODE_ENV": "development"
                 }
               },
@@ -64,7 +64,7 @@ A Model Context Protocol (MCP) server implementation for [Verodat](https://verod
                 "command": "node",
                 "args": ["addlocalpath\\verodat-mcp-server\\build\\src\\design.js"],
                 "env": {
-                  "VERODAT_AI_API_KEY": "HStV8TgSwoDvpz5Wb3lA4q3Z5vNcVLOa",
+                  "VERODAT_AI_API_KEY": "API-KEY",
                   "NODE_ENV": "development"
                 }
               },
@@ -72,7 +72,7 @@ A Model Context Protocol (MCP) server implementation for [Verodat](https://verod
                 "command": "node",
                 "args": ["addlocalpath\\verodat-mcp-server\\build\\src\\manage.js"],
                 "env": {
-                  "VERODAT_AI_API_KEY": "HStV8TgSwoDvpz5Wb3lA4q3Z5vNcVLOa",
+                  "VERODAT_AI_API_KEY": "API-KEY",
                   "NODE_ENV": "development"
                 }
               }
