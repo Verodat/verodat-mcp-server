@@ -104,7 +104,7 @@ We welcome contributions! Please feel free to submit a Pull Request.
 
 ## License
 
-[License Type] - see the [LICENSE](LICENSE) file for details
+[LICENSE](LICENSE) file for details
 
 ## Support
 
