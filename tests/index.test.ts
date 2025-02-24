@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { SecureStdioTransport, MAX_MESSAGE_SIZE, MAX_REQUESTS_PER_MINUTE } from '../src/index.js';
+import { SecureStdioTransport } from '../src/services/transportService.js';
+import { MAX_MESSAGE_SIZE, MAX_REQUESTS_PER_MINUTE } from '../src/config/constants.js';
 
 describe('SecureStdioTransport Security Tests', () => {
     let transport: SecureStdioTransport;
