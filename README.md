@@ -1,5 +1,6 @@
 # Verodat MCP Server 
 [![MCP](https://img.shields.io/badge/MCP-Server-blue.svg)](https://github.com/modelcontextprotocol)
+[![smithery badge](https://smithery.ai/badge/@Verodat/verodat-mcp-server)](https://smithery.ai/server/@Verodat/verodat-mcp-server)
 
 ## Overview
 A Model Context Protocol (MCP) server implementation for [Verodat](https://verodat.io), enabling seamless integration of Verodat's data management capabilities with AI systems like Claude Desktop.
@@ -30,6 +31,15 @@ A Model Context Protocol (MCP) server implementation for [Verodat](https://verod
 
 ## Quick Start
 
+### Installing via Smithery
+
+To install Verodat MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@Verodat/verodat-mcp-server):
+
+```bash
+npx -y @smithery/cli install @Verodat/verodat-mcp-server --client claude
+```
+
+### Manual Installation
 1. Clone the repository:
    ```bash
    git clone https://github.com/Verodat/verodat-mcp-server.git
