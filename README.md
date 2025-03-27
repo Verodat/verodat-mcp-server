@@ -87,11 +87,14 @@ The server provides the following MCP commands:
 // Account & Workspace Management
 get-accounts        // List accessible accounts
 get-workspaces     // List workspaces in an account
+get-queries 		// Retrieve existing AI queries
 
 // Dataset Operations
 create-dataset     // Create a new dataset
 get-datasets      // List datasets in a workspace
 get-dataset-output // Retrieve dataset records
+get-dataset-targetfields // Retrieve dataset targetfields
+upload-dataset-rows  // Add new data rows to an existing dataset
 
 // AI Operations
 get-ai-context     // Get workspace AI context
