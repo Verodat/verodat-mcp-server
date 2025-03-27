@@ -84,3 +84,24 @@ export const GetQueriesArgumentsSchema = z.object({
     filter: z.string().optional(),
     sort: z.string().optional()
 });
+
+export const UploadDatasetRowsArgumentsSchema = z.object({
+    accountId: z.number().int().positive(),
+    workspaceId: z.number().int().positive(),
+    datasetId: z.number().int().positive(),
+    data: z.array(
+        z.union([
+            z.object({
+                header: z.array(
+                    z.object({
+                        name: z.string(),
+                        type: z.enum(["string", "numeric", "date"])
+                    })
+                )
+            }),
+            z.object({
+                rows: z.array(z.array(z.union([z.string(), z.number(), z.null()])))
+            })
+        ])
+    )
+});

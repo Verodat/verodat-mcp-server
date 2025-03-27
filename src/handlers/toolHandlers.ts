@@ -1,4 +1,4 @@
-import { CreateDatasetArgumentsSchema, ExecuteAIQueryArgumentsSchema, GetAIContextArgumentsSchema, GetDatasetOutputArgumentsSchema, GetDatasetsArgumentsSchema, GetWorkspacesArgumentsSchema, GetQueriesArgumentsSchema, GetDatasetTargetFieldsArgumentsSchema } from "../types/schemas.js";
+import { CreateDatasetArgumentsSchema, ExecuteAIQueryArgumentsSchema, GetAIContextArgumentsSchema, GetDatasetOutputArgumentsSchema, GetDatasetsArgumentsSchema, GetWorkspacesArgumentsSchema, GetQueriesArgumentsSchema, GetDatasetTargetFieldsArgumentsSchema, UploadDatasetRowsArgumentsSchema } from "../types/schemas.js";
 
 export class ToolHandlers {
     private readonly API_BASE_URL: string;
@@ -47,7 +47,7 @@ export class ToolHandlers {
 
     async handleCreateDataset(args: unknown) {
         const validatedArgs = CreateDatasetArgumentsSchema.parse(args);
-        const url = `${this.API_BASE_URL}/ai/accounts/${validatedArgs.accountId}/workspaces/${validatedArgs.workspaceId}/save-dataset-through-mcp`;
+        const url = `${this.API_BASE_URL}/ai/accounts/${validatedArgs.accountId}/workspaces/${validatedArgs.workspaceId}/mcp/datasets`;
 
         const { data, error } = await this.makeAPIRequest(url, "POST", {
             name: validatedArgs.name,
@@ -74,7 +74,7 @@ export class ToolHandlers {
             filter: validatedArgs.filter
         });
 
-        const url = `${this.API_BASE_URL}/ai/accounts/${validatedArgs.accountId}/workspaces/${validatedArgs.workspaceId}/datasets?${queryParams}`;
+        const url = `${this.API_BASE_URL}/ai/accounts/${validatedArgs.accountId}/workspaces/${validatedArgs.workspaceId}/mcp/datasets?${queryParams}`;
 
         const { data, error } = await this.makeAPIRequest(url, "GET");
 
@@ -97,7 +97,7 @@ export class ToolHandlers {
             filter: validatedArgs.filter
         });
 
-        const url = `${this.API_BASE_URL}/ai/accounts/${validatedArgs.accountId}/workspaces/${validatedArgs.workspaceId}/datasets/${validatedArgs.datasetId}/dout-data?${queryParams}`;
+        const url = `${this.API_BASE_URL}/ai/accounts/${validatedArgs.accountId}/workspaces/${validatedArgs.workspaceId}/mcp/datasets/${validatedArgs.datasetId}/dout-data?${queryParams}`;
 
         const { data, error } = await this.makeAPIRequest(url, "GET");
 
@@ -194,7 +194,7 @@ export class ToolHandlers {
             queryParams.append('sort', validatedArgs.sort);
         }
 
-        const url = `${this.API_BASE_URL}/ai/accounts/${validatedArgs.accountId}/workspaces/${validatedArgs.workspaceId}/datasets/${validatedArgs.datasetId}/targetfields?${queryParams}`;
+        const url = `${this.API_BASE_URL}/ai/accounts/${validatedArgs.accountId}/workspaces/${validatedArgs.workspaceId}/mcp/datasets/${validatedArgs.datasetId}/targetfields?${queryParams}`;
 
         const { data, error } = await this.makeAPIRequest(url, "GET");
 
@@ -223,9 +223,28 @@ export class ToolHandlers {
             queryParams.append('sort', validatedArgs.sort);
         }
 
-        const url = `${this.API_BASE_URL}/ai/accounts/${validatedArgs.accountId}/workspaces/${validatedArgs.workspaceId}/list-queries-through-mcp?${queryParams}`;
+        const url = `${this.API_BASE_URL}/ai/accounts/${validatedArgs.accountId}/workspaces/${validatedArgs.workspaceId}/mcp/queries?${queryParams}`;
 
         const { data, error } = await this.makeAPIRequest(url, "GET");
+
+        if (error) {
+            return {
+                content: [{ type: "error", text: error }]
+            };
+        }
+
+        return {
+            content: [{ type: "text", text: JSON.stringify(data, null, 2) }]
+        };
+    }
+
+    async handleUploadDatasetRows(args: unknown) {
+        const validatedArgs = UploadDatasetRowsArgumentsSchema.parse(args);
+        const url = `${this.API_BASE_URL}/ai/accounts/${validatedArgs.accountId}/workspaces/${validatedArgs.workspaceId}/mcp/datasets/${validatedArgs.datasetId}/upload`;
+
+        const { data, error } = await this.makeAPIRequest(url, "POST", {
+            data: validatedArgs.data
+        });
 
         if (error) {
             return {

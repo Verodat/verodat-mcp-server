@@ -512,6 +512,110 @@ export function setupRequestHandlers(server: Server, toolHandlers: ToolHandlers)
                         },
                         required: ["accountId", "workspaceId"]
                     }
+                },
+                {
+                    name: "upload-dataset-rows",
+                    description: `WHEN TO USE:
+                    - When you need to add new data rows to an existing dataset
+                    - When importing data from external sources into a dataset
+                    - When updating a dataset with new records
+                    - When populating a newly created dataset with initial data
+                    
+                    Tool Description:
+                    Uploads rows of data to a specified dataset. The data must match the target fields structure of the dataset.
+                    
+                    IMPORTANT: Before using this tool, ALWAYS invoke the "get-dataset-targetfields" tool first with the same datasetId to:
+                    - Retrieve the exact schema structure of the dataset
+                    - Understand the required data types for each field
+                    - Identify which fields are mandatory vs optional
+                    - Ensure your data matches the expected format and constraints
+                    
+                    Required parameters:
+                    - accountId: Account ID where the workspace belongs
+                    - workspaceId: Workspace ID containing the dataset
+                    - datasetId: Dataset ID to upload data to
+                    - data: Array containing header and rows objects
+                    
+                    Data format:
+                    - Header must define column names and types (string, numeric, date) that match the dataset's target fields
+                    - Rows must contain arrays of values matching the header structure
+                    - Dates must be in ISO format: "yyyy-MM-ddTHH:mm:ssZ"
+                    - Ensure all mandatory fields from the dataset schema are included
+                    
+                    Example usage:
+                    {
+                      "accountId": 123,
+                      "workspaceId": 456,
+                      "datasetId": 789,
+                      "data": [
+                        {
+                          "header": [
+                            { "name": "product_id", "type": "string" },
+                            { "name": "price", "type": "numeric" },
+                            { "name": "expiry_date", "type": "date" }
+                          ]
+                        },
+                        {
+                          "rows": [
+                            ["A001", 99.99, "2023-12-31T00:00:00Z"],
+                            ["A002", 149.99, "2024-06-30T00:00:00Z"]
+                          ]
+                        }
+                      ]
+                    }`,
+                    inputSchema: {
+                        type: "object",
+                        properties: {
+                            accountId: {
+                                type: "number",
+                                description: "Account ID where the workspace belongs"
+                            },
+                            workspaceId: {
+                                type: "number",
+                                description: "Workspace ID containing the dataset"
+                            },
+                            datasetId: {
+                                type: "number",
+                                description: "Dataset ID to upload data to"
+                            },
+                            data: {
+                                type: "array",
+                                description: "Array containing header and rows objects",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        header: {
+                                            type: "array",
+                                            items: {
+                                                type: "object",
+                                                properties: {
+                                                    name: {
+                                                        type: "string",
+                                                        description: "Field name"
+                                                    },
+                                                    type: {
+                                                        type: "string",
+                                                        enum: ["string", "numeric", "date"],
+                                                        description: "Field data type"
+                                                    }
+                                                },
+                                                required: ["name", "type"]
+                                            }
+                                        },
+                                        rows: {
+                                            type: "array",
+                                            items: {
+                                                type: "array",
+                                                items: {}
+                                            },
+                                            description: "Array of data rows"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        required: ["accountId", "workspaceId", "datasetId", "data"]
+                    }
                 }
             ],
         };
@@ -541,6 +645,8 @@ export function setupRequestHandlers(server: Server, toolHandlers: ToolHandlers)
                     return await toolHandlers.handleGetDatasetTargetfields(args);
                 case "get-queries":
                     return await toolHandlers.handleGetQueries(args);
+                case "upload-dataset-rows":
+                    return await toolHandlers.handleUploadDatasetRows(args);
                 default:
                     throw new Error(`Unknown tool: ${name}`);
             }
