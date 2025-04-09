@@ -122,15 +122,35 @@ You can configure any of the three tool categories by specifying the appropriate
 * **Design capabilities**: Use `design.js` (9 tools, includes dataset creation)
 * **Full management**: Use `manage.js` (10 tools, includes data upload)
 
-Example for configuring the Design category:
+Example for configuring all three categories simultaneously:
 
 ```json
 {
   "mcpServers": {
+    "verodat-consume": {
+      "command": "node",
+      "args": [
+        "path/to/verodat-mcp-server/build/src/consume.js"
+      ],
+      "env": {
+        "VERODAT_AI_API_KEY": "your-api-key",
+        "VERODAT_API_BASE_URL": "https://verodat.io/api/v3"
+      }
+    },
     "verodat-design": {
       "command": "node",
       "args": [
         "path/to/verodat-mcp-server/build/src/design.js"
+      ],
+      "env": {
+        "VERODAT_AI_API_KEY": "your-api-key",
+        "VERODAT_API_BASE_URL": "https://verodat.io/api/v3"
+      }
+    },
+    "verodat-manage": {
+      "command": "node",
+      "args": [
+        "path/to/verodat-mcp-server/build/src/manage.js"
       ],
       "env": {
         "VERODAT_AI_API_KEY": "your-api-key",
