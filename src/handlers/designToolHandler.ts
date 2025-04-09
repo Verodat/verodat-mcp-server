@@ -1,7 +1,7 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ToolHandlers } from "./toolHandlers.js";
 import { BaseToolHandler } from "./BaseToolHandler.js";
-import { ToolDefinitions } from "./toolDefinition.js";
+import { DesignToolDefinitions } from "./designToolDefinitions.js";
 
 /**
  * Tool handler for the DESIGN category
@@ -14,47 +14,47 @@ export class DesignToolHandler extends BaseToolHandler {
 
     private setupTools(): void {
         this.addTool(
-            ToolDefinitions["get-datasets"],
+            DesignToolDefinitions["get-datasets"],
             this.toolHandlers.handleGetDatasets.bind(this.toolHandlers)
         );
         
         this.addTool(
-            ToolDefinitions["get-dataset-output"],
+            DesignToolDefinitions["get-dataset-output"],
             this.toolHandlers.handleGetDatasetOutput.bind(this.toolHandlers)
         );
         
         this.addTool(
-            ToolDefinitions["get-accounts"],
+            DesignToolDefinitions["get-accounts"],
             this.toolHandlers.handleGetAccounts.bind(this.toolHandlers)
         );
         
         this.addTool(
-            ToolDefinitions["get-workspaces"],
+            DesignToolDefinitions["get-workspaces"],
             this.toolHandlers.handleGetWorkspaces.bind(this.toolHandlers)
         );
         
         this.addTool(
-            ToolDefinitions["get-dataset-targetfields"],
+            DesignToolDefinitions["get-dataset-targetfields"],
             this.toolHandlers.handleGetDatasetTargetfields.bind(this.toolHandlers)
         );
         
         this.addTool(
-            ToolDefinitions["get-queries"],
+            DesignToolDefinitions["get-queries"],
             this.toolHandlers.handleGetQueries.bind(this.toolHandlers)
         );
 
         this.addTool(
-            ToolDefinitions["get-ai-context"],
+            DesignToolDefinitions["get-ai-context"],
             this.toolHandlers.handleGetAIContext.bind(this.toolHandlers)
         );
 
         this.addTool(
-            ToolDefinitions["execute-ai-query"],
+            DesignToolDefinitions["execute-ai-query"],
             this.toolHandlers.handleExecuteAIQuery.bind(this.toolHandlers)
         );
         
         this.addTool(
-            ToolDefinitions["create-dataset"],
+            DesignToolDefinitions["create-dataset"],
             this.toolHandlers.handleCreateDataset.bind(this.toolHandlers)
         );
     }
