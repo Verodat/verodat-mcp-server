@@ -4,10 +4,15 @@
   "main": "index.js",
   "type": "module",
   "bin": {
-    "weather": "./build/index.js"
+    "verodat-consume": "./build/src/consume.js",
+    "verodat-design": "./build/src/design.js",
+    "verodat-manage": "./build/src/manage.js"
   },
   "scripts": {
     "build": "tsc",
+    "start:consume": "node ./build/src/consume.js",
+    "start:design": "node ./build/src/design.js",
+    "start:manage": "node ./build/src/manage.js",
     "test": "mocha --loader=ts-node/esm 'tests/**/*.test.ts'",
     "test:watch": "mocha --loader=ts-node/esm 'tests/**/*.test.ts' --watch"
   },
