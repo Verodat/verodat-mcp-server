@@ -7,105 +7,193 @@ A Model Context Protocol (MCP) server implementation for [Verodat](https://verod
 
 ![image](https://github.com/user-attachments/assets/ec26c3e1-077f-46bb-915d-690cfde0833e)
 
-## Features
+# Verodat MCP Server
 
-- **Account & Workspace Management**
-  - List accessible accounts
-  - Browse workspaces within accounts
-  
-- **Dataset Operations**
-  - Create datasets with custom schemas and validation
-  - Query and filter datasets
-  - Retrieve dataset records
-  
-- **AI Integration**
-  - Fetch workspace context for AI processing
-  - Execute AI-powered queries on datasets
+This repository contains a Model Context Protocol (MCP) server implementation for Verodat, allowing AI models to interact with Verodat's data management capabilities through well-defined tools.
+
+## Overview
+
+The Verodat MCP Server provides a standardized way for AI models to access and manipulate data in Verodat. It implements the Model Context Protocol specification, providing tools for data consumption, design, and management.
+
+## Tool Categories
+
+The server is organized into three main tool categories, each offering a progressive set of capabilities:
+
+### 1. Consume (8 tools)
+
+The base category focused on data retrieval operations:
+
+* `get-accounts`: Retrieve available accounts
+* `get-workspaces`: List workspaces within an account
+* `get-datasets`: List datasets in a workspace
+* `get-dataset-output`: Retrieve actual data from a dataset
+* `get-dataset-targetfields`: Retrieve field definitions for a dataset
+* `get-queries`: Retrieve existing AI queries
+* `get-ai-context`: Get workspace context and data structure
+* `execute-ai-query`: Execute AI-powered queries on datasets
+
+### 2. Design (9 tools)
+
+Includes all tools from Consume, plus:
+
+* `create-dataset`: Create a new dataset with defined schema
+
+### 3. Manage (10 tools)
+
+Includes all tools from Design, plus:
+
+* `upload-dataset-rows`: Upload data rows to existing datasets
 
 ## Prerequisites
 
-- Node.js (v18 or higher)
-- Git
-- Claude Desktop (for Claude integration)
-- Verodat account and AI API key
+* Node.js (v18 or higher)
+* Git
+* Claude Desktop (for Claude integration)
+* Verodat account and AI API key
 
-## Quick Start
+## Installation
 
-### Installing via Smithery
+### Quick Start
 
-To install Verodat MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@Verodat/verodat-mcp-server):
+#### Installing via Smithery
 
-```bash
+To install Verodat MCP Server for Claude Desktop automatically via Smithery:
+
+```
 npx -y @smithery/cli install @Verodat/verodat-mcp-server --client claude
 ```
 
-### Manual Installation
+#### Manual Installation
+
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/Verodat/verodat-mcp-server.git
-   cd verodat-mcp-server
-   ```
+
+```
+git clone https://github.com/Verodat/verodat-mcp-server.git
+cd verodat-mcp-server
+```
 
 2. Install dependencies and build:
-   ```bash
-   npm install
-   npm run build
-   ```
+
+```
+npm install
+npm run build
+```
 
 3. Configure Claude Desktop:
-
    Create or modify the config file:
-   - MacOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - Windows: `%APPDATA%/Claude/claude_desktop_config.json`
+   * MacOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   * Windows: `%APPDATA%/Claude/claude_desktop_config.json`
+   
+   Add the configuration which is mensioned below in configuration:
 
-   Add the following configuration:
-   ```json
-   {
-       "mcpServers": {
-           "verodat": {
-               "command": "node",
-               "args": ["path/to/verodat-mcp-server/build/src/index.js"],
-               "env": {
-                   "VERODAT_AI_API_KEY": "your-verodat-ai-api-key"
-               }
-           }
-       }
-   }
-   ```
 
-## Getting Started with Verodat
+### Getting Started with Verodat
 
-1. Sign up for a Verodat account at [verodat.com](https://verodat.com)
+1. Sign up for a Verodat account at verodat.com
 2. Generate an AI API key from your Verodat dashboard
 3. Add the API key to your Claude Desktop configuration
 
-## Available Commands
+## Configuration
+
+The server requires configuration for authentication and API endpoints. Create a configuration file for your AI model to use:
+
+```json
+{
+  "mcpServers": {
+    "verodat-consume": {
+      "command": "node",
+      "args": [
+        "path/to/verodat-mcp-server/build/src/consume.js"
+      ],
+      "env": {
+        "VERODAT_AI_API_KEY": "your-api-key",
+        "VERODAT_API_BASE_URL": "https://your-verodat-instance/api/v3"
+      }
+    }
+  }
+}
+```
+
+### Configuration Options
+
+You can configure any of the three tool categories by specifying the appropriate JS file one at a time in claude:
+
+* **Consume only**: Use `consume.js` (8 tools for data retrieval)
+* **Design capabilities**: Use `design.js` (9 tools, includes dataset creation)
+* **Full management**: Use `manage.js` (10 tools, includes data upload)
+
+Example for configuring the Design category:
+
+```json
+{
+  "mcpServers": {
+    "verodat-design": {
+      "command": "node",
+      "args": [
+        "path/to/verodat-mcp-server/build/src/design.js"
+      ],
+      "env": {
+        "VERODAT_AI_API_KEY": "your-api-key",
+        "VERODAT_API_BASE_URL": "https://your-verodat-instance/api/v3"
+      }
+    }
+  }
+}
+```
+
+### Environment Variables
+
+* `VERODAT_AI_API_KEY`: Your Verodat API key for authentication
+* `VERODAT_API_BASE_URL`: The base URL for the Verodat API (defaults to "https://verodat.io/api/v3" if not specified)
+
+## Tool Usage Guide
+
+### Available Commands
 
 The server provides the following MCP commands:
 
-```typescript
+```
 // Account & Workspace Management
 get-accounts        // List accessible accounts
-get-workspaces     // List workspaces in an account
-get-queries 		// Retrieve existing AI queries
+get-workspaces      // List workspaces in an account
+get-queries         // Retrieve existing AI queries
 
 // Dataset Operations
-create-dataset     // Create a new dataset
-get-datasets      // List datasets in a workspace
-get-dataset-output // Retrieve dataset records
+create-dataset      // Create a new dataset
+get-datasets        // List datasets in a workspace
+get-dataset-output  // Retrieve dataset records
 get-dataset-targetfields // Retrieve dataset targetfields
-upload-dataset-rows  // Add new data rows to an existing dataset
+upload-dataset-rows // Add new data rows to an existing dataset
 
 // AI Operations
-get-ai-context     // Get workspace AI context
-execute-ai-query   // Run AI queries on datasets
+get-ai-context      // Get workspace AI context
+execute-ai-query    // Run AI queries on datasets
 ```
 
-## Debugging
+### Selecting the Right Tool Category
+
+* **For read-only operations**: Use the `consume.js` server configuration
+* **For creating datasets**: Use the `design.js` server configuration
+* **For uploading data**: Use the `manage.js` server configuration
+
+## Security Considerations
+
+* Authentication is required via API key
+* Request validation ensures properly formatted data
+
+## Development
+
+The codebase is written in TypeScript and organized into:
+
+* **Tool handlers**: Implementation of each tool's functionality
+* **Transport layer**: Handles communication with the AI model
+* **Validation**: Ensures proper data formats using Zod schemas
+
+### Debugging
 
 The MCP server communicates over stdio, which can make debugging challenging. We provide an MCP Inspector tool to help:
 
-```bash
+```
 npm run inspector
 ```
 
