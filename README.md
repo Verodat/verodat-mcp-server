@@ -107,7 +107,7 @@ The server requires configuration for authentication and API endpoints. Create a
       ],
       "env": {
         "VERODAT_AI_API_KEY": "your-api-key",
-        "VERODAT_API_BASE_URL": "https://your-verodat-instance/api/v3"
+        "VERODAT_API_BASE_URL": "https://verodat.io/api/v3"
       }
     }
   }
@@ -134,7 +134,7 @@ Example for configuring the Design category:
       ],
       "env": {
         "VERODAT_AI_API_KEY": "your-api-key",
-        "VERODAT_API_BASE_URL": "https://your-verodat-instance/api/v3"
+        "VERODAT_API_BASE_URL": "https://verodat.io/api/v3"
       }
     }
   }
