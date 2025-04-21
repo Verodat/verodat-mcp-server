@@ -57,7 +57,7 @@ export class ToolHandlers {
 
         if (error) {
             return {
-                content: [{ type: "error", text: error }]
+                content: [{ type: "text", text: error }]
             };
         }
 
@@ -80,7 +80,7 @@ export class ToolHandlers {
 
         if (error) {
             return {
-                content: [{ type: "error", text: error }]
+                content: [{ type: "text", text: error }]
             };
         }
 
@@ -103,7 +103,7 @@ export class ToolHandlers {
 
         if (error) {
             return {
-                content: [{ type: "error", text: error }]
+                content: [{ type: "text", text: error }]
             };
         }
 
@@ -118,7 +118,7 @@ export class ToolHandlers {
 
         if (error) {
             return {
-                content: [{ type: "error", text: error }]
+                content: [{ type: "text", text: error }]
             };
         }
 
@@ -135,7 +135,7 @@ export class ToolHandlers {
 
         if (error) {
             return {
-                content: [{ type: "error", text: error }]
+                content: [{ type: "text", text: error }]
             };
         }
 
@@ -152,7 +152,7 @@ export class ToolHandlers {
 
         if (error) {
             return {
-                content: [{ type: "error", text: error }]
+                content: [{ type: "text", text: error }]
             };
         }
 
@@ -171,7 +171,7 @@ export class ToolHandlers {
 
         if (error) {
             return {
-                content: [{ type: "error", text: error }]
+                content: [{ type: "text", text: error }]
             };
         }
 
@@ -200,7 +200,7 @@ export class ToolHandlers {
 
         if (error) {
             return {
-                content: [{ type: "error", text: error }]
+                content: [{ type: "text", text: error }]
             };
         }
 
@@ -229,7 +229,7 @@ export class ToolHandlers {
 
         if (error) {
             return {
-                content: [{ type: "error", text: error }]
+                content: [{ type: "text", text: error }]
             };
         }
 
@@ -248,7 +248,7 @@ export class ToolHandlers {
 
         if (error) {
             return {
-                content: [{ type: "error", text: error }]
+                content: [{ type: "text", text: error }]
             };
         }
 

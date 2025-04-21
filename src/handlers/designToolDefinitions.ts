@@ -418,6 +418,17 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
         - mandatory: Boolean indicating if field is required
         - Optional: isKeyComponent (boolean), description (string)
         
+        ⚠️ IMPORTANT: Field names must NOT use SQL reserved words as they will be rejected by Verodat.
+        
+        Common SQL reserved words to avoid:
+        SELECT, FROM, WHERE, ORDER, GROUP, BY, INSERT, UPDATE, DELETE, JOIN, CASE, 
+        WHEN, THEN, ELSE, END, NULL, TRUE, FALSE, DATE, TIME, USER, COUNT, SUM, AVG
+        
+        If you need to use a term that is a SQL reserved word:
+        - Use a different term: Instead of "order", use "order_details" or "purchase_order"
+        - Add a prefix or suffix: Instead of "date", use "event_date" or "date_created"
+        - Use underscores: Instead of "select", use "user_select" or "selection"
+        
         Example usage:
         Creating a product catalog dataset:
         {
@@ -440,13 +451,13 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
               "description": "Current product price"
             },
             {
-              "name": "inventory_count",
+              "name": "inventory_count",  // Good: Not using "count" (SQL reserved word)
               "type": "integer",
               "mandatory": false,
               "description": "Current inventory level"
             },
             {
-              "name": "last_updated",
+              "name": "last_updated",  // Good: Not using "date" (SQL reserved word)
               "type": "date",
               "mandatory": true,
               "description": "Last inventory update date"
