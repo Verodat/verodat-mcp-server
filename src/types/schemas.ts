@@ -29,6 +29,12 @@ export const CreateDatasetArgumentsSchema = z.object({
                 mandatory: z.boolean(),
                 isKeyComponent: z.boolean().optional(),
                 description: z.string().optional(),
+                validation_rules: z.array(z.object({
+                    code: z.string(),
+                    name: z.string(),
+                    type: z.string(),
+                    severity: z.enum(["CRITICAL", "WARNING"])
+                })).optional()
             })
         )
         .nonempty(),

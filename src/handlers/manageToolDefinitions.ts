@@ -359,6 +359,7 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
         description: `WHEN TO USE:
         - When creating administrative or system datasets
         - When setting up governance or tracking datasets
+        - When creating a entity relationship data model
         - When implementing standardized dataset templates
         - When establishing reference datasets for management
         - When creating datasets with strict governance requirements
@@ -376,7 +377,15 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
         - name: Field identifier (e.g., "audit_id")
         - type: One of ["string", "number", "integer", "date"]
         - mandatory: Boolean indicating if field is required
-        - Optional: isKeyComponent (boolean), description (string)
+        - Optional: isKeyComponent (boolean), description (string), validation_rules
+
+        Relationships between Datasets:
+         When setting foreign key relationships between tables, use the LOOKUP_EXISTS validation rule. 
+         This imposes a constraint on the created dataset. For example, LOOKUP_EXISTS("Products","Unique Id",row["Product Id"]) 
+         means that the column "Product Id" is a target field in this dataset and is referencing the Primary Key of a parent 
+         dataset called "Products", where the primary key in this dataset is called "Unique Id". The primary key of the parent 
+         dataset can be found from the "isKeyComponent": true. Note that the primary key can be a compound key also
+         (indicated by "isKeyComponent": true, "isCompound": true).
         
         ⚠️ IMPORTANT: Field names must NOT use SQL reserved words as they will be rejected by Verodat.
         
@@ -394,29 +403,37 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
         {
           "accountId": 123,
           "workspaceId": 123,
-          "name": "System_Audit_Log",
+          "name": "System Audit Log",
           "description": "Tracks administrative actions and changes",
           "targetFields": [
             {
-              "name": "audit_id",
+              "name": "Audit Id",
               "type": "string",
               "mandatory": true,
               "isKeyComponent": true,
               "description": "Unique audit entry identifier"
             },
             {
-              "name": "action_type",
+              "name": "Action Type",
               "type": "string",
               "mandatory": true,
-              "description": "Type of administrative action performed"
+              "description": "Type of administrative action performed",
+              "validation_rules": [
+                {
+                  "name": "Must be a valid type",
+                  "code": "LOOKUP_EXISTS(\"Action Types\",\"Type Name\", row[\"Action Type\"])", // Good: Imposing a referential check with a lookup to the parent dataset
+                  "severity": "CRITICAL",
+                  "type": "ROW"
+                }
+              ]
             },
             {
-              "name": "user_id",  // Good: Not using "user" (SQL reserved word)
+              "name": "User Id",  // Good: Not using "user" (SQL reserved word)
               "type": "string",
               "mandatory": true
             },
             {
-              "name": "event_timestamp",  // Good: Not using "timestamp" (SQL reserved word)
+              "name": "Event Timestamp",  // Good: Not using "timestamp" (SQL reserved word)
               "type": "date",
               "mandatory": true
             }
@@ -455,6 +472,22 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
                             mandatory: { type: "boolean" },
                             isKeyComponent: { type: "boolean" },
                             description: { type: "string" },
+                            validation_rules: { 
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        name: { type: "string" },
+                                        code: { type: "string" },
+                                        severity: { 
+                                            type: "string",
+                                            enum: ["CRITICAL", "WARNING"],
+                                            description: "Severity of the validation rule"
+                                        },
+                                        type: { type: "string" }
+                                    }
+                                }
+                            },
                         },
                         required: ["name", "type", "mandatory"],
                     },
@@ -463,7 +496,7 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
             required: ["workspaceId", "name", "targetFields", "accountId"],
         },
     },
-    
+
     "execute-ai-query": {
         name: "execute-ai-query",
         description: `WHEN TO USE:
@@ -474,7 +507,16 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
         - When performing system-level data operations
         
         Tool Description:
-        Executes AI-powered queries for administrative and management purposes.
+        Executes AI-powered queries for administrative and management purposes.  
+
+        IMPORTANT: 
+        - Before using this tool, ALWAYS invoke the "get-ai-context" tool first with to etrieve the exact schema structure of the data model
+        - When determining foreign key relationships between tables, 
+            - use the LOOKUP_EXISTS validation rules. These act as constraints on the child dataset. 
+            - For example, LOOKUP_EXISTS("Products","unique_id",row["Product Id"]) means that the column "Product Id" is in a child dataset and is referencing the Primary Key of the parent dataset called "Products", 
+            - where the primary key in this table is called "Unique Id". 
+            - The primary key of the parent table can be found from the "isKeyComponent": true. 
+            - Note that the primary key can be a compound key (indicated by "isKeyComponent": true, "isCompound": true).
         
         Required parameters:
         - accountId: Account ID

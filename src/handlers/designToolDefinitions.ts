@@ -355,24 +355,34 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
     "execute-ai-query": {
         name: "execute-ai-query",
         description: `WHEN TO USE:
-        - When testing query performance against proposed schema designs
-        - When validating that new dataset designs support required queries
-        - When designing fields based on specific query requirements
-        - When exploring data patterns to inform schema design
+        - When generating administrative reports on data
+        - When auditing data for compliance or quality issues
+        - When validating data integrity across datasets
+        - When checking for data inconsistencies or anomalies
+        - When performing system-level data operations
         
         Tool Description:
-        Executes AI-powered queries to test and validate dataset designs.
+        Executes AI-powered queries for administrative and management purposes.  
+
+        IMPORTANT: 
+        - Before using this tool, ALWAYS invoke the "get-ai-context" tool first with to etrieve the exact schema structure of the data model
+        - When determining foreign key relationships between tables, 
+            - use the LOOKUP_EXISTS validation rules. These act as constraints on the child dataset. 
+            - For example, LOOKUP_EXISTS("Products","unique_id",row["Product Id"]) means that the column "Product Id" is in a child dataset and is referencing the Primary Key of the parent dataset called "Products", 
+            - where the primary key in this table is called "Unique Id". 
+            - The primary key of the parent table can be found from the "isKeyComponent": true. 
+            - Note that the primary key can be a compound key (indicated by "isKeyComponent": true, "isCompound": true).
         
         Required parameters:
         - accountId: Account ID
         - workspaceId: Workspace ID
-        - query: SQL query to execute (e.g. SELECT * FROM new_dataset_draft LIMIT 10)
+        - query: SQL query to execute (e.g. SELECT COUNT(*) FROM datasets GROUP BY status)
         
         Example usage:
         {
           "accountId": 123,
           "workspaceId": 456,
-          "query": "SELECT field1, field2 FROM dataset_design WHERE condition='test' GROUP BY field1"
+          "query": "SELECT dataset_name, COUNT(*) as record_count FROM all_datasets GROUP BY dataset_name ORDER BY record_count DESC"
         }`,
         inputSchema: {
             type: "object",
@@ -397,14 +407,15 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
     "create-dataset": {
         name: "create-dataset",
         description: `WHEN TO USE:
-        - When setting up a new data structure from scratch
-        - When you need to create a prototype or test dataset
-        - When creating companion datasets with specific schemas
-        - When implementing a finalized dataset design
-        - When you need to enforce specific data types and validation rules
+        - When creating administrative or system datasets
+        - When setting up governance or tracking datasets
+        - When creating a entity relationship data model
+        - When implementing standardized dataset templates
+        - When establishing reference datasets for management
+        - When creating datasets with strict governance requirements
         
         Tool Description:
-        Creates a new dataset with defined schema and validation rules based on design specifications.
+        Creates a new dataset with defined schema for administrative purposes.
         
         Required parameters:
         - accountId: Target account ID
@@ -413,10 +424,18 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
         - targetFields: Array of field definitions
         
         Each targetField must have:
-        - name: Field identifier (e.g., "customer_id")
+        - name: Field identifier (e.g., "audit_id")
         - type: One of ["string", "number", "integer", "date"]
         - mandatory: Boolean indicating if field is required
-        - Optional: isKeyComponent (boolean), description (string)
+        - Optional: isKeyComponent (boolean), description (string), validation_rules
+
+        Relationships between Datasets:
+         When setting foreign key relationships between tables, use the LOOKUP_EXISTS validation rule. 
+         This imposes a constraint on the created dataset. For example, LOOKUP_EXISTS("Products","Unique Id",row["Product Id"]) 
+         means that the column "Product Id" is a target field in this dataset and is referencing the Primary Key of a parent 
+         dataset called "Products", where the primary key in this dataset is called "Unique Id". The primary key of the parent 
+         dataset can be found from the "isKeyComponent": true. Note that the primary key can be a compound key also
+         (indicated by "isKeyComponent": true, "isCompound": true).
         
         ⚠️ IMPORTANT: Field names must NOT use SQL reserved words as they will be rejected by Verodat.
         
@@ -430,37 +449,43 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
         - Use underscores: Instead of "select", use "user_select" or "selection"
         
         Example usage:
-        Creating a product catalog dataset:
+        Creating an audit log dataset:
         {
           "accountId": 123,
           "workspaceId": 123,
-          "name": "Product_Catalog_2025",
-          "description": "Comprehensive product catalog with pricing and inventory data",
+          "name": "System Audit Log",
+          "description": "Tracks administrative actions and changes",
           "targetFields": [
             {
-              "name": "product_id",
+              "name": "Audit Id",
               "type": "string",
               "mandatory": true,
               "isKeyComponent": true,
-              "description": "Unique product identifier"
+              "description": "Unique audit entry identifier"
             },
             {
-              "name": "price",
-              "type": "number",
+              "name": "Action Type",
+              "type": "string",
               "mandatory": true,
-              "description": "Current product price"
+              "description": "Type of administrative action performed",
+              "validation_rules": [
+                {
+                  "name": "Must be a valid type",
+                  "code": "LOOKUP_EXISTS(\"Action Types\",\"Type Name\", row[\"Action Type\"])", // Good: Imposing a referential check with a lookup to the parent dataset
+                  "severity": "CRITICAL",
+                  "type": "ROW"
+                }
+              ]
             },
             {
-              "name": "inventory_count",  // Good: Not using "count" (SQL reserved word)
-              "type": "integer",
-              "mandatory": false,
-              "description": "Current inventory level"
+              "name": "User Id",  // Good: Not using "user" (SQL reserved word)
+              "type": "string",
+              "mandatory": true
             },
             {
-              "name": "last_updated",  // Good: Not using "date" (SQL reserved word)
+              "name": "Event Timestamp",  // Good: Not using "timestamp" (SQL reserved word)
               "type": "date",
-              "mandatory": true,
-              "description": "Last inventory update date"
+              "mandatory": true
             }
           ]
         }`,
@@ -497,6 +522,22 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
                             mandatory: { type: "boolean" },
                             isKeyComponent: { type: "boolean" },
                             description: { type: "string" },
+                            validation_rules: { 
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        name: { type: "string" },
+                                        code: { type: "string" },
+                                        severity: { 
+                                            type: "string",
+                                            enum: ["CRITICAL", "WARNING"],
+                                            description: "Severity of the validation rule"
+                                        },
+                                        type: { type: "string" }
+                                    }
+                                }
+                            },
                         },
                         required: ["name", "type", "mandatory"],
                     },

@@ -354,25 +354,34 @@ export const ConsumeToolDefinitions: Record<string, ToolDefinition> = {
     "execute-ai-query": {
         name: "execute-ai-query",
         description: `WHEN TO USE:
-        - When performing ad-hoc data analysis and exploration
-        - When generating reports from complex data relationships
-        - When you need quick insights without writing complex SQL
-        - When analyzing trends across datasets
-        - When filtering and aggregating data for specific insights
+        - When generating administrative reports on data
+        - When auditing data for compliance or quality issues
+        - When validating data integrity across datasets
+        - When checking for data inconsistencies or anomalies
+        - When performing system-level data operations
         
         Tool Description:
-        Executes AI-powered queries on datasets for data consumption and analysis.
+        Executes AI-powered queries for administrative and management purposes.  
+
+        IMPORTANT: 
+        - Before using this tool, ALWAYS invoke the "get-ai-context" tool first with to etrieve the exact schema structure of the data model
+        - When determining foreign key relationships between tables, 
+            - use the LOOKUP_EXISTS validation rules. These act as constraints on the child dataset. 
+            - For example, LOOKUP_EXISTS("Products","unique_id",row["Product Id"]) means that the column "Product Id" is in a child dataset and is referencing the Primary Key of the parent dataset called "Products", 
+            - where the primary key in this table is called "Unique Id". 
+            - The primary key of the parent table can be found from the "isKeyComponent": true. 
+            - Note that the primary key can be a compound key (indicated by "isKeyComponent": true, "isCompound": true).
         
         Required parameters:
         - accountId: Account ID
         - workspaceId: Workspace ID
-        - query: SQL query to execute (e.g. SELECT product_name FROM products ORDER BY price DESC LIMIT 10)
+        - query: SQL query to execute (e.g. SELECT COUNT(*) FROM datasets GROUP BY status)
         
         Example usage:
         {
           "accountId": 123,
           "workspaceId": 456,
-          "query": "SELECT customer_name, SUM(order_value) FROM orders GROUP BY customer_name ORDER BY SUM(order_value) DESC LIMIT 5"
+          "query": "SELECT dataset_name, COUNT(*) as record_count FROM all_datasets GROUP BY dataset_name ORDER BY record_count DESC"
         }`,
         inputSchema: {
             type: "object",
