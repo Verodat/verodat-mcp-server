@@ -17,7 +17,8 @@ export class ToolHandlers {
         const headers: Record<string, string> = {
             Authorization: `ApiKey ${this.authToken}`,
             "Content-Type": "application/json",
-            "Accept": "application/json, text/plain, */*"
+            "Accept": "application/json, text/plain, */*",
+			"api-call-type": "API_CALL_MCP"
         };
     
         if (this.API_BASE_URL === "https://verodat.azure-api.net") {
