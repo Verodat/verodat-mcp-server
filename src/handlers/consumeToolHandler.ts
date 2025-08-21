@@ -10,6 +10,8 @@ export class ConsumeToolHandler extends BaseToolHandler {
     constructor(server: Server, toolHandlers: ToolHandlers) {
         super(server, toolHandlers);
         this.setupTools();
+        this.registerProcedureTools(); // Register procedure tools
+        this.initializeProcedures(); // Initialize procedure system
     }
 
     private setupTools(): void {

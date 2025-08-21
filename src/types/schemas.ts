@@ -111,3 +111,36 @@ export const UploadDatasetRowsArgumentsSchema = z.object({
         ])
     )
 });
+
+// Procedure-related schemas
+export const StartProcedureSchema = z.object({
+    procedureId: z.string().describe('The ID of the procedure to start (e.g., PROC-EXPORT-DATA-V1)')
+});
+
+export const ListProceduresSchema = z.object({});
+
+export const ResumeProcedureSchema = z.object({
+    runId: z.string().describe('The runId of the procedure to resume')
+});
+
+// Procedure support schemas
+export const QuizAnswerSchema = z.object({
+    __runId: z.string().describe('The procedure run ID'),
+    answer: z.union([
+        z.string(),
+        z.array(z.string())
+    ]).describe('The answer to the quiz question')
+});
+
+export const ApprovalCheckSchema = z.object({
+    __runId: z.string().describe('The procedure run ID')
+});
+
+export const InformationAckSchema = z.object({
+    __runId: z.string().describe('The procedure run ID'),
+    acknowledged: z.boolean().describe('Whether the information was acknowledged')
+});
+
+export const WaitContinueSchema = z.object({
+    __runId: z.string().describe('The procedure run ID')
+});
