@@ -31,7 +31,7 @@ export class ProcedureParser {
             description: proc.description || '',
             version: proc.version || '1.0.0',
             purpose: proc.purpose || proc.name,
-            triggers: this.parseTriggers(proc.triggers || proc.applicableTools),
+            triggers: this.parseTriggers(proc.triggers),
             requirements: proc.requirements || {},
             steps: proc.steps.map((step) => this.parseStep(step)),
             metadata: {
@@ -61,20 +61,13 @@ export class ProcedureParser {
         };
     }
     /**
-     * Parse triggers (backward compatible with applicableTools)
+     * Parse triggers configuration
      */
     static parseTriggers(triggers) {
         if (!triggers) {
             return { tools: [], operations: [], conditions: [] };
         }
-        // Handle legacy applicableTools format
-        if (Array.isArray(triggers)) {
-            return {
-                tools: triggers.map(t => typeof t === 'string' ? t : t.name || t),
-                operations: [],
-                conditions: []
-            };
-        }
+        // Only support new structured format
         return {
             tools: triggers.tools || [],
             operations: triggers.operations || [],

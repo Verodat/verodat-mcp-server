@@ -15,7 +15,9 @@ export const defaultProcedureConfig: ProcedureConfig = {
     enabled: true,
     strict: false,
     runExpiry: 5 * 60 * 1000, // 5 minutes
-    maxConcurrentRuns: 10
+    maxConcurrentRuns: 10,
+    requireForWrite: true,  // Always require procedures for WRITE operations
+    requireForRead: false   // Don't require procedures for READ operations by default
   },
   
   verodat: {

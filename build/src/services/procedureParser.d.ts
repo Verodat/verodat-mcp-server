@@ -13,7 +13,7 @@ export declare class ProcedureParser {
      */
     private static parseProcedure;
     /**
-     * Parse triggers (backward compatible with applicableTools)
+     * Parse triggers configuration
      */
     private static parseTriggers;
     /**

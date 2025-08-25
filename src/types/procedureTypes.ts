@@ -127,6 +127,7 @@ export interface Procedure {
     tools: string[];
     operations: string[];
     conditions: string[];
+    enforceOnRead?: boolean;  // Optional: explicitly require procedure for READ operations
   };
   requirements: Record<string, any>;
   steps: ProcedureStep[];
@@ -277,6 +278,8 @@ export interface ProcedureConfig {
     strict: boolean;
     runExpiry: number;
     maxConcurrentRuns: number;
+    requireForWrite?: boolean;  // Require procedures for WRITE operations
+    requireForRead?: boolean;   // Require procedures for READ operations
   };
   verodat: {
     datasetName: string;

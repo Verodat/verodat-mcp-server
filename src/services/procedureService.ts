@@ -13,6 +13,7 @@ import {
 } from '../types/procedureTypes.js';
 import { procedureLoader } from './procedureLoader.js';
 import { stepExecutor } from './stepExecutor.js';
+import { procedureAuditLogger } from './procedureAuditLogger.js';
 import { storageConfig } from '../config/procedureConfig.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -36,6 +37,15 @@ export class ProcedureService {
     
     // Set tool handler for step executor
     stepExecutor.setToolHandler(verodatHandler);
+    
+    // Initialize audit logger (if workspace/account IDs are available)
+    if (verodatHandler.workspaceId && verodatHandler.accountId) {
+      procedureAuditLogger.initialize(
+        verodatHandler,
+        verodatHandler.workspaceId,
+        verodatHandler.accountId
+      );
+    }
     
     // Load procedures on startup
     await procedureLoader.loadProcedures();
@@ -76,6 +86,9 @@ export class ProcedureService {
     // Store the run
     this.activeRuns.set(runId, run);
     await this.saveState();
+
+    // Log procedure start
+    await procedureAuditLogger.logProcedureStart(run, procedure);
 
     console.log(`Started procedure ${procedureId} with runId ${runId}`);
     return run;
@@ -160,7 +173,19 @@ export class ProcedureService {
     if (stepResult.status === 'failure') {
       run.status = 'failed';
       await this.saveState();
+      
+      // Log procedure failure
+      await procedureAuditLogger.logProcedureFail(
+        run,
+        stepResult.error || 'Step execution failed'
+      );
+      
       return run;
+    }
+
+    // Log step completion
+    if (currentStep) {
+      await procedureAuditLogger.logStepComplete(run, currentStep.id, currentStep.name);
     }
 
     // Move to next step
@@ -169,6 +194,9 @@ export class ProcedureService {
     // Check if procedure is complete
     if (run.currentStepIndex >= procedure.steps.length) {
       run.status = 'completed';
+      
+      // Log procedure completion
+      await procedureAuditLogger.logProcedureComplete(run);
     }
 
     await this.saveState();
@@ -283,8 +311,13 @@ export class ProcedureService {
 
     for (const [runId, run] of this.activeRuns.entries()) {
       if (run.expiresAt && new Date(run.expiresAt) < now) {
-        run.status = 'expired';
-        changed = true;
+        if (run.status === 'active') {
+          run.status = 'expired';
+          changed = true;
+          
+          // Log procedure expiration
+          await procedureAuditLogger.logProcedureExpire(run);
+        }
       }
 
       // Remove completed/failed/expired runs older than 1 hour

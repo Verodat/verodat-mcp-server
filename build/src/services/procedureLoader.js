@@ -63,7 +63,8 @@ export class ProcedureLoader {
                         workspaceId,
                         accountId,
                         filter: 'vscope=PUBLISHED and vstate=ACTIVE',
-                        max: 100
+                        max: 100,
+                        __systemOperation: 'procedure-loading' // System flag for loading procedures
                     }
                 }
             });
@@ -85,7 +86,8 @@ export class ProcedureLoader {
                         accountId,
                         datasetId: procedureDataset.id,
                         filter: 'vscope=PUBLISHED and vstate=ACTIVE',
-                        max: 1000
+                        max: 1000,
+                        __systemOperation: 'procedure-loading' // System flag for loading procedures
                     }
                 }
             });
