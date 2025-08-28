@@ -25,6 +25,9 @@ export declare class ProcedureLoader {
     private refreshProcedures;
     /**
      * Load default/test procedures
+     * IMPORTANT: This function has been intentionally emptied as part of the governance orchestration implementation.
+     * When procedures are not found in Verodat, the system will now trigger an orchestration workflow
+     * to collaboratively create appropriate governance with the user, rather than using hardcoded defaults.
      */
     private loadDefaultProcedures;
     /**

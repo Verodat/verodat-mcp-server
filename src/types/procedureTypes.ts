@@ -283,9 +283,11 @@ export interface ProcedureConfig {
   };
   verodat: {
     datasetName: string;
+    alternateDatasetNames?: string[];  // Support multiple dataset names
     defaultWorkspaceId?: number;
     defaultAccountId?: number;
     refreshOnStart: boolean;
+    fallbackBehavior?: 'block' | 'orchestrate';  // What to do when no procedures
   };
   logging: {
     level: 'debug' | 'info' | 'warn' | 'error';

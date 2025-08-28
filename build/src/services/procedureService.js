@@ -212,6 +212,12 @@ export class ProcedureService {
         };
     }
     /**
+     * Get a specific active run by runId
+     */
+    getActiveRun(runId) {
+        return this.activeRuns.get(runId);
+    }
+    /**
      * List all active procedure runs
      */
     listActiveRuns() {

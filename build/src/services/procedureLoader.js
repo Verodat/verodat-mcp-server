@@ -58,7 +58,7 @@ export class ProcedureLoader {
             // Get workspace and account info from handler
             const workspaceId = this.verodatHandler.workspaceId || this.config.verodat.defaultWorkspaceId;
             const accountId = this.verodatHandler.accountId || this.config.verodat.defaultAccountId;
-            // Query for AI_Agent_Procedures dataset
+            // Query for AI_Agent_Procedures dataset - support both regular and _Ops variants
             const datasetsResult = await this.verodatHandler.handle({
                 method: 'tools/call',
                 params: {
@@ -73,12 +73,17 @@ export class ProcedureLoader {
                 }
             });
             const datasets = datasetsResult?.content?.[0]?.data || [];
-            const procedureDataset = datasets.find((ds) => ds.name === this.config.verodat.datasetName ||
-                ds.name === 'AI_Agent_Procedures');
+            // Check primary dataset name and all alternates
+            const datasetNames = [this.config.verodat.datasetName];
+            if (this.config.verodat.alternateDatasetNames) {
+                datasetNames.push(...this.config.verodat.alternateDatasetNames);
+            }
+            const procedureDataset = datasets.find((ds) => datasetNames.includes(ds.name));
             if (!procedureDataset) {
                 if (process.argv[2] === 'call') {
-                    console.warn('AI_Agent_Procedures dataset not found');
+                    console.warn('AI_Agent_Procedures dataset not found. Governance orchestration will be triggered for WRITE operations.');
                 }
+                // No longer loading default procedures - orchestration will handle missing governance
                 this.loadDefaultProcedures();
                 return;
             }
@@ -141,104 +146,20 @@ export class ProcedureLoader {
     }
     /**
      * Load default/test procedures
+     * IMPORTANT: This function has been intentionally emptied as part of the governance orchestration implementation.
+     * When procedures are not found in Verodat, the system will now trigger an orchestration workflow
+     * to collaboratively create appropriate governance with the user, rather than using hardcoded defaults.
      */
     loadDefaultProcedures() {
-        const infoStep = {
-            id: 'step-1',
-            name: 'Verify Export Purpose',
-            type: 'information',
-            description: 'Review data export guidelines',
-            required: true,
-            retryable: false,
-            maxRetries: 0,
-            timeout: 60000,
-            validation: {},
-            metadata: {},
-            conditions: {},
-            skipConditions: [],
-            content: 'You are about to export sensitive data. Please ensure you understand and comply with data protection regulations.',
-            format: 'text',
-            acknowledgmentRequired: true,
-            displayDuration: undefined,
-            links: [],
-            attachments: []
-        };
-        const toolStep = {
-            id: 'step-2',
-            name: 'Execute Export',
-            type: 'tool',
-            description: 'Perform the actual data export',
-            required: true,
-            retryable: true,
-            maxRetries: 3,
-            timeout: 300000,
-            validation: {},
-            metadata: {},
-            conditions: {},
-            skipConditions: [],
-            toolName: 'get-dataset-output',
-            toolDescription: undefined,
-            parameters: {},
-            validationRules: [],
-            outputValidation: undefined,
-            sideEffects: [],
-            compensatingAction: undefined
-        };
-        const defaultProcedures = [
-            {
-                id: 'PROC-EXPORT-DATA-V1',
-                name: 'Data Export Procedure',
-                description: 'Standard procedure for exporting sensitive data',
-                version: '1.0.0',
-                purpose: 'Ensure secure and compliant data export',
-                triggers: {
-                    tools: ['get-dataset-output'],
-                    operations: ['export', 'download'],
-                    conditions: []
-                },
-                requirements: {},
-                steps: [infoStep, toolStep],
-                metadata: {
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                    createdBy: 'system',
-                    tags: ['data-export', 'compliance'],
-                    category: 'data-governance',
-                    priority: 'high',
-                    estimatedDuration: 120,
-                    riskLevel: 'medium'
-                },
-                validation: {
-                    preConditions: [],
-                    postConditions: [],
-                    invariants: []
-                },
-                audit: {
-                    required: true,
-                    level: 'full',
-                    retention: 90
-                },
-                isActive: true,
-                effectiveFrom: new Date().toISOString(),
-                appliesTo: {
-                    roles: [],
-                    departments: [],
-                    operations: []
-                }
-            }
-        ];
-        // Cache default procedures
-        for (const procedure of defaultProcedures) {
-            this.cache.set(procedure.id, {
-                procedure,
-                timestamp: Date.now(),
-                accessCount: 0,
-                lastAccessed: Date.now()
-            });
-        }
+        // No default procedures are loaded anymore
+        // The orchestration system will handle missing governance by:
+        // 1. Analyzing if new governance is needed
+        // 2. Checking for similar existing governance
+        // 3. Guiding the user to create appropriate policies and procedures
+        // 4. Storing the new governance in Verodat datasets
         this.lastRefresh = Date.now();
         if (process.argv[2] === 'call') {
-            console.log(`Loaded ${this.cache.size} default procedures`);
+            console.log('No default procedures loaded. Governance orchestration will be triggered for WRITE operations without procedures.');
         }
     }
     /**

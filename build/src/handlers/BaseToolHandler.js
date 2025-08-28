@@ -2,8 +2,11 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 import { procedureService } from "../services/procedureService.js";
 import { procedureLoader } from "../services/procedureLoader.js";
 import { StartProcedureHandler } from "./startProcedureHandler.js";
+import { runIdValidator } from "../services/runIdValidator.js";
 import { isReadOperation, getOperationType } from "../config/operationTypes.js";
 import { ServerType, getServerEnforcementConfig, shouldEnforceProcedure } from "../config/serverTypes.js";
+import { orchestrationService } from "../services/orchestrationService.js";
+import { defaultProcedureConfig } from "../config/procedureConfig.js";
 export class BaseToolHandler {
     server;
     toolHandlers;
@@ -49,6 +52,13 @@ export class BaseToolHandler {
         }
         try {
             await procedureService.initialize(this.toolHandlers);
+            // Initialize orchestration service if enabled
+            if (defaultProcedureConfig.verodat.fallbackBehavior === 'orchestrate') {
+                await orchestrationService.initialize(this.toolHandlers);
+                if (process.argv[2] === 'call') {
+                    console.log(`[${this.serverType.toUpperCase()}] Orchestration service initialized`);
+                }
+            }
             // Re-apply enforcement settings after initialization
             const config = getServerEnforcementConfig(this.serverType);
             this.procedureEnforcementEnabled = config.enforceProcedures;
@@ -144,9 +154,27 @@ export class BaseToolHandler {
             }
             delete args.__systemOperation; // Remove the flag anyway
         }
-        // Check for existing runId in arguments
+        // SECURITY FIX: Validate runId properly to prevent hijacking
         if (args && args.__runId) {
-            // Tool is part of an active procedure
+            // Validate the runId is authorized for this specific tool
+            const validation = await runIdValidator.validateRunIdForTool(args.__runId, toolName, args);
+            if (!validation.isValid) {
+                // Log security violation
+                if (process.argv[2] === 'call') {
+                    console.error(`[SECURITY] RunId validation failed for ${toolName}: ${validation.reason}`);
+                }
+                // Return error with security violation details
+                return {
+                    required: true,
+                    procedure: null,
+                    reason: validation.reason || 'Invalid or unauthorized runId',
+                    runId: args.__runId
+                };
+            }
+            // Valid runId for this tool - allow execution
+            if (process.argv[2] === 'call') {
+                console.log(`[SECURITY] RunId ${args.__runId} validated for tool ${toolName}`);
+            }
             return { required: false };
         }
         // Determine if we should enforce based on operation type and server configuration
@@ -192,9 +220,44 @@ export class BaseToolHandler {
         // For WRITE operations
         if (procedures.length === 0) {
             if (process.argv[2] === 'call') {
-                console.log(`[${this.serverType.toUpperCase()}] No procedures found for WRITE operation ${toolName}, but enforcement is required`);
+                console.log(`[${this.serverType.toUpperCase()}] No procedures found for WRITE operation ${toolName}`);
             }
-            // For MANAGE/CONSUME servers, WRITE operations must be blocked even without procedures
+            // Check if orchestration is enabled
+            if (defaultProcedureConfig.verodat.fallbackBehavior === 'orchestrate' && orchestrationService.isEnabled()) {
+                if (process.argv[2] === 'call') {
+                    console.log(`[${this.serverType.toUpperCase()}] Triggering governance orchestration for ${toolName}`);
+                }
+                // Trigger orchestration to create governance
+                const orchestrationResult = await orchestrationService.handleMissingGovernance(toolName, 'WRITE', args);
+                if (orchestrationResult.success) {
+                    // Orchestration completed successfully
+                    const message = `Governance orchestration completed. ` +
+                        (orchestrationResult.createdProcedure
+                            ? `Created procedure: ${orchestrationResult.createdProcedure.procedure_id}. `
+                            : '') +
+                        (orchestrationResult.createdPolicy
+                            ? `Created policy: ${orchestrationResult.createdPolicy.policy_id}. `
+                            : '') +
+                        `Please retry your operation.`;
+                    return {
+                        required: true,
+                        procedure: orchestrationResult.createdProcedure,
+                        reason: message,
+                        runId: undefined
+                    };
+                }
+                else {
+                    // Orchestration failed or was not needed
+                    return {
+                        required: true,
+                        procedure: null,
+                        reason: orchestrationResult.error ||
+                            'This WRITE operation requires a procedure for governance. Orchestration could not create one automatically.',
+                        runId: undefined
+                    };
+                }
+            }
+            // Fallback to blocking if orchestration is disabled
             return {
                 required: true,
                 procedure: null,

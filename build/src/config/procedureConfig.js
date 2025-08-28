@@ -17,9 +17,11 @@ export const defaultProcedureConfig = {
     },
     verodat: {
         datasetName: 'AI_Agent_Procedures',
+        alternateDatasetNames: ['AI_Agent_Procedures_Ops'], // Support _Ops variant
         defaultWorkspaceId: undefined,
         defaultAccountId: undefined,
-        refreshOnStart: true
+        refreshOnStart: true,
+        fallbackBehavior: 'orchestrate' // Trigger orchestration when no procedures found
     },
     logging: {
         level: 'info',

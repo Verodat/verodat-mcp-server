@@ -108,6 +108,15 @@
       "rules": "1. Status progression: To Do → In Progress → Done\n2. In Progress: Work actively being performed\n3. Done: Work completed and verified\n4. Completion timestamp required for Done status\n5. Completion notes document outcomes\n6. PROC-UPDATE-RAIDA-STATUS manages transitions\n7. Audit trail maintained for all changes\n8. Weekly review of incomplete RAIDAs",
       "policy_owner": "Sally O'Brien",
       "policy_status": "Active"
+    },
+    {
+      "policy_id": "POL-GOVERNANCE-OPTIMIZATION",
+      "title": "Governance Optimization and Deduplication",
+      "purpose": "Ensures governance documents remain efficient, non-redundant, and aligned with operational needs.",
+      "applies_to": "All policies and procedures in the workspace",
+      "rules": "1. Similar governance with >75% overlap should be consolidated\n2. VERA coordinates deduplication efforts quarterly\n3. Unused procedures archived after 90 days\n4. Policy/procedure creation checks for existing similar governance\n5. Governance reuse preferred over creation when similarity >60%\n6. All consolidation logged in Core_RAIDA\n7. Affected agents notified of governance changes\n8. User approval required for governance removal",
+      "policy_owner": "AGENT-VERA",
+      "policy_status": "Active"
     }
   ],
   "procedures": [
@@ -182,6 +191,33 @@
       "triggers": "Data export request",
       "procedure_owner": "AGENT-DATAMODEL-OPS",
       "procedure_status": "Active"
+    },
+    {
+      "procedure_id": "PROC-ORCHESTRATE-GOVERNANCE",
+      "title": "Orchestrate Governance Creation",
+      "purpose": "Coordinate creation of missing policies and procedures when WRITE operations lack governance.",
+      "steps": "1. Analyze governance requirements for operation\n2. Check for similar existing governance\n3. Determine if new policy needed\n4. Coordinate with AGENT-POLICIES-OPS for policy creation\n5. Coordinate with AGENT-PROCEDURES-OPS for procedure creation\n6. Store new governance in appropriate datasets\n7. Apply governance to requested operation\n8. Create RAIDA entry for governance creation",
+      "triggers": "Missing procedure for WRITE operation",
+      "procedure_owner": "AGENT-VERA",
+      "procedure_status": "Active"
+    },
+    {
+      "procedure_id": "PROC-BUILD-POLICY",
+      "title": "Build New Policy",
+      "purpose": "Create new governance policy based on operation requirements.",
+      "steps": "1. Gather operation context and requirements\n2. Analyze similar policies for reuse potential\n3. Generate policy rules based on operation type\n4. Define policy scope and applicability\n5. Set policy owner and review schedule\n6. Store policy in Business_Policies_Ops\n7. Link policy to related procedures\n8. Notify relevant agents of new policy",
+      "triggers": "Request from VERA for new policy creation",
+      "procedure_owner": "AGENT-POLICIES-OPS",
+      "procedure_status": "Active"
+    },
+    {
+      "procedure_id": "PROC-BUILD-PROCEDURE",
+      "title": "Build New Procedure",
+      "purpose": "Create new procedure from policy rules and operation requirements.",
+      "steps": "1. Review related policy requirements\n2. Define procedure steps based on policy rules\n3. Add validation and approval steps as needed\n4. Configure triggers for operation types\n5. Set procedure owner and maintenance schedule\n6. Store procedure in AI_Agent_Procedures_Ops\n7. Test procedure with sample operation\n8. Activate procedure for use",
+      "triggers": "Request from VERA for new procedure creation",
+      "procedure_owner": "AGENT-PROCEDURES-OPS",
+      "procedure_status": "Active"
     }
   ],
   "agents": [
@@ -237,6 +273,15 @@
       "primary_dataset": "Core_RAIDA",
       "tool_permissions": "[\"verodat-design\", \"verodat-manage\", \"verodat-consume\"]",
       "coordination_role": "Manages Claude/Cline interactions and governance",
+      "agent_status": "Active"
+    },
+    {
+      "agent_id": "AGENT-VERA",
+      "agent_name": "VERA Governance Orchestrator",
+      "specialization": "Governance orchestration, policy/procedure creation coordination, agent coordination",
+      "primary_dataset": "Core_RAIDA",
+      "tool_permissions": "[\"verodat-manage\", \"verodat-consume\"]",
+      "coordination_role": "Orchestrates governance creation when procedures are missing, coordinates specialist agents for policy and procedure creation",
       "agent_status": "Active"
     }
   ],

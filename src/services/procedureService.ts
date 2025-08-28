@@ -282,6 +282,13 @@ export class ProcedureService {
   }
 
   /**
+   * Get a specific active run by runId
+   */
+  getActiveRun(runId: string): ProcedureRun | undefined {
+    return this.activeRuns.get(runId);
+  }
+
+  /**
    * List all active procedure runs
    */
   listActiveRuns(): Array<{ runId: string; procedureId: string; status: string }> {

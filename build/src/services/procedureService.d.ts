@@ -40,6 +40,10 @@ export declare class ProcedureService {
      */
     checkProcedureRequirement(context: ProcedureContext): Promise<EnforcementResult>;
     /**
+     * Get a specific active run by runId
+     */
+    getActiveRun(runId: string): ProcedureRun | undefined;
+    /**
      * List all active procedure runs
      */
     listActiveRuns(): Array<{
