@@ -534,5 +534,112 @@ export const DesignToolDefinitions = {
             },
             required: ["workspaceId", "name", "targetFields", "accountId"],
         },
+    },
+    "upload-dataset-rows": {
+        name: "upload-dataset-rows",
+        description: `WHEN TO USE:
+        - When bootstrapping workspace with initial governance data
+        - When loading procedures into AI_Agent_Procedures datasets
+        - When populating policies in Business_Policies datasets
+        - When configuring agents in AI_Agent_Identity datasets
+        - When initializing Core_RAIDA with bootstrap entries
+        - When setting up reference data for new workspaces
+        
+        Tool Description:
+        Uploads rows of data to a specified dataset - critical for workspace bootstrap operations.
+        
+        IMPORTANT: Before using this tool, ALWAYS invoke the "get-dataset-targetfields" tool first with the same datasetId to:
+        - Retrieve the exact schema structure of the dataset
+        - Understand the required data types for each field
+        - Identify which fields are mandatory vs optional
+        - Ensure your data matches the expected format and constraints
+        
+        Required parameters:
+        - accountId: Account ID where the workspace belongs
+        - workspaceId: Workspace ID containing the dataset
+        - datasetId: Dataset ID to upload data to
+        - data: Array containing header and rows objects
+        
+        Data format:
+        - Header must define column names and types (string, numeric, date) that match the dataset's target fields
+        - Rows must contain arrays of values matching the header structure
+        - Dates must be in ISO format: "yyyy-MM-ddTHH:mm:ssZ"
+        - Ensure all mandatory fields from the dataset schema are included
+        - Field names are CASE-SENSITIVE and must match exactly
+        
+        Example usage for bootstrap:
+        {
+          "accountId": 123,
+          "workspaceId": 456,
+          "datasetId": 789,
+          "data": [
+            {
+              "header": [
+                { "name": "procedure_id", "type": "string" },
+                { "name": "title", "type": "string" },
+                { "name": "purpose", "type": "string" },
+                { "name": "steps", "type": "string" }
+              ]
+            },
+            {
+              "rows": [
+                ["PROC-BOOTSTRAP-WORKSPACE", "Bootstrap Workspace", "Initialize governance", "1. Create datasets..."]
+              ]
+            }
+          ]
+        }`,
+        inputSchema: {
+            type: "object",
+            properties: {
+                accountId: {
+                    type: "number",
+                    description: "Account ID where the workspace belongs"
+                },
+                workspaceId: {
+                    type: "number",
+                    description: "Workspace ID containing the dataset"
+                },
+                datasetId: {
+                    type: "number",
+                    description: "Dataset ID to upload data to"
+                },
+                data: {
+                    type: "array",
+                    description: "Array containing header and rows objects",
+                    items: {
+                        type: "object",
+                        properties: {
+                            header: {
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        name: {
+                                            type: "string",
+                                            description: "Field name"
+                                        },
+                                        type: {
+                                            type: "string",
+                                            enum: ["string", "numeric", "date"],
+                                            description: "Field data type"
+                                        }
+                                    },
+                                    required: ["name", "type"]
+                                }
+                            },
+                            rows: {
+                                type: "array",
+                                items: {
+                                    type: "array",
+                                    items: {}
+                                },
+                                description: "Array of data rows"
+                            }
+                        }
+                    }
+                }
+            },
+            required: ["accountId", "workspaceId", "datasetId", "data"]
+        }
     }
 };

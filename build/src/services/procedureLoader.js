@@ -20,7 +20,9 @@ export class ProcedureLoader {
     initialize(verodatHandler) {
         this.verodatHandler = verodatHandler;
         this.initialized = true;
-        console.log('ProcedureLoader initialized');
+        if (process.argv[2] === 'call') {
+            console.log('ProcedureLoader initialized');
+        }
     }
     /**
      * Load all procedures from Verodat dataset
@@ -50,7 +52,9 @@ export class ProcedureLoader {
      */
     async refreshProcedures() {
         try {
-            console.log('Refreshing procedures from Verodat...');
+            if (process.argv[2] === 'call') {
+                console.log('Refreshing procedures from Verodat...');
+            }
             // Get workspace and account info from handler
             const workspaceId = this.verodatHandler.workspaceId || this.config.verodat.defaultWorkspaceId;
             const accountId = this.verodatHandler.accountId || this.config.verodat.defaultAccountId;
@@ -72,7 +76,9 @@ export class ProcedureLoader {
             const procedureDataset = datasets.find((ds) => ds.name === this.config.verodat.datasetName ||
                 ds.name === 'AI_Agent_Procedures');
             if (!procedureDataset) {
-                console.warn('AI_Agent_Procedures dataset not found');
+                if (process.argv[2] === 'call') {
+                    console.warn('AI_Agent_Procedures dataset not found');
+                }
                 this.loadDefaultProcedures();
                 return;
             }
@@ -113,16 +119,22 @@ export class ProcedureLoader {
                     }
                 }
                 catch (error) {
-                    console.error(`Failed to parse procedure from row ${row.id}:`, error);
+                    if (process.argv[2] === 'call') {
+                        console.error(`Failed to parse procedure from row ${row.id}:`, error);
+                    }
                 }
             }
             this.lastRefresh = Date.now();
-            console.log(`Loaded ${this.cache.size} procedures from Verodat`);
+            if (process.argv[2] === 'call') {
+                console.log(`Loaded ${this.cache.size} procedures from Verodat`);
+            }
             // Apply cache size limit
             this.enforceMaxCacheSize();
         }
         catch (error) {
-            console.error('Failed to refresh procedures from Verodat:', error);
+            if (process.argv[2] === 'call') {
+                console.error('Failed to refresh procedures from Verodat:', error);
+            }
             // Fall back to default procedures
             this.loadDefaultProcedures();
         }
@@ -225,7 +237,9 @@ export class ProcedureLoader {
             });
         }
         this.lastRefresh = Date.now();
-        console.log(`Loaded ${this.cache.size} default procedures`);
+        if (process.argv[2] === 'call') {
+            console.log(`Loaded ${this.cache.size} default procedures`);
+        }
     }
     /**
      * Get a specific procedure by ID
@@ -299,7 +313,9 @@ export class ProcedureLoader {
     clearCache() {
         this.cache.clear();
         this.lastRefresh = 0;
-        console.log('Procedure cache cleared');
+        if (process.argv[2] === 'call') {
+            console.log('Procedure cache cleared');
+        }
     }
     /**
      * Get cache statistics

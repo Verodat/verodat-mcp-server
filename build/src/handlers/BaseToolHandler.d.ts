@@ -1,5 +1,6 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ToolHandlers } from "./toolHandlers.js";
+import { ServerType } from "../config/serverTypes.js";
 export interface ToolDefinition {
     name: string;
     description: string;
@@ -15,7 +16,14 @@ export declare class BaseToolHandler {
     protected toolDefinitions: ToolDefinition[];
     protected toolHandlerMap: Map<string, (args: unknown) => Promise<any>>;
     protected procedureEnforcementEnabled: boolean;
-    constructor(server: Server, toolHandlers: ToolHandlers);
+    protected serverType: ServerType;
+    protected enforceOnRead: boolean;
+    protected enforceOnWrite: boolean;
+    constructor(server: Server, toolHandlers: ToolHandlers, serverType?: ServerType);
+    /**
+     * Configure procedure enforcement based on server type
+     */
+    private configureEnforcement;
     /**
      * Initialize procedure system
      */

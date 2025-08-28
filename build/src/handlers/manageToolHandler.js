@@ -1,12 +1,15 @@
 import { BaseToolHandler } from "./BaseToolHandler.js";
 import { ManageToolDefinitions } from "./manageToolDefinitions.js";
+import { ServerType } from "../config/serverTypes.js";
 /**
  * Tool handler for the MANAGE category
  */
 export class ManageToolHandler extends BaseToolHandler {
-    constructor(server, toolHandlers) {
-        super(server, toolHandlers);
+    constructor(server, toolHandlers, serverType = ServerType.MANAGE) {
+        super(server, toolHandlers, serverType);
         this.setupTools();
+        this.registerProcedureTools(); // Register procedure tools for MANAGE server
+        this.initializeProcedures(); // Initialize procedure system for enforcement
     }
     setupTools() {
         this.addTool(ManageToolDefinitions["get-datasets"], this.toolHandlers.handleGetDatasets.bind(this.toolHandlers));

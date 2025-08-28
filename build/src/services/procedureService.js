@@ -30,7 +30,9 @@ export class ProcedureService {
         }
         // Load procedures on startup
         await procedureLoader.loadProcedures();
-        console.log('ProcedureService initialized');
+        if (process.argv[2] === 'call') {
+            console.log('ProcedureService initialized');
+        }
     }
     /**
      * Start a new procedure run
@@ -64,7 +66,9 @@ export class ProcedureService {
         await this.saveState();
         // Log procedure start
         await procedureAuditLogger.logProcedureStart(run, procedure);
-        console.log(`Started procedure ${procedureId} with runId ${runId}`);
+        if (process.argv[2] === 'call') {
+            console.log(`Started procedure ${procedureId} with runId ${runId}`);
+        }
         return run;
     }
     /**
@@ -298,11 +302,15 @@ export class ProcedureService {
                     this.activeRuns.set(run.runId, run);
                 }
             }
-            console.log(`Loaded ${this.activeRuns.size} procedure runs from state`);
+            if (process.argv[2] === 'call') {
+                console.log(`Loaded ${this.activeRuns.size} procedure runs from state`);
+            }
         }
         catch (error) {
             // File doesn't exist or is invalid, start fresh
-            console.log('No existing procedure state found, starting fresh');
+            if (process.argv[2] === 'call') {
+                console.log('No existing procedure state found, starting fresh');
+            }
         }
     }
     /**
@@ -328,10 +336,14 @@ export class ProcedureService {
                     runs
                 };
                 await fs.writeFile(this.stateFile, JSON.stringify(state, null, 2));
-                console.log(`Saved ${runs.length} procedure runs to state`);
+                if (process.argv[2] === 'call') {
+                    console.log(`Saved ${runs.length} procedure runs to state`);
+                }
             }
             catch (error) {
-                console.error('Failed to save procedure state:', error);
+                if (process.argv[2] === 'call') {
+                    console.error('Failed to save procedure state:', error);
+                }
             }
         }, 1000);
     }

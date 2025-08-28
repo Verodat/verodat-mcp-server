@@ -1,0 +1,254 @@
+{
+  "workspace_template": "operations_governance_v2",
+  "description": "Complete governance framework for Operations workspace with vision-aligned policies",
+  "important_notes": {
+    "field_mapping": "CRITICAL: When uploading data to Verodat, field names are CASE-SENSITIVE and must match EXACTLY. Use lowercase with underscores (e.g., 'policy_id' not 'Policy_Id', 'policy_owner' not 'Policy Owner'). Default mappings will fail if names don't match exactly."
+  },
+  "datasets": [
+    {
+      "name": "Business_Policies_Ops",
+      "description": "Operational policies for the Operations workspace",
+      "already_exists": true
+    },
+    {
+      "name": "AI_Agent_Procedures_Ops",
+      "description": "Operational procedures for the Operations workspace",
+      "already_exists": true
+    },
+    {
+      "name": "AI_Data_Model_Registry",
+      "description": "Central registry of all datasets and their relationships",
+      "already_exists": true
+    },
+    {
+      "name": "AI_Model_Change_Log",
+      "description": "Track all data model changes and their impacts",
+      "already_exists": true
+    },
+    {
+      "name": "AI_Agent_Identity_Ops",
+      "description": "Define specialist agents for Operations workspace",
+      "already_exists": true
+    },
+    {
+      "name": "Core_RAIDA",
+      "description": "RAIDA tracking system for governance and task management",
+      "already_exists": true
+    }
+  ],
+  "policies": [
+    {
+      "policy_id": "POL-GOVERNANCE-MASTER",
+      "title": "Policy & Procedure Governance",
+      "purpose": "Defines how policies and procedures are created, managed, and maintained in the Operations workspace.",
+      "applies_to": "All policies and procedures in Operations workspace",
+      "rules": "1. Use POL-[DOMAIN]-[NAME] format for policies\n2. Use PROC-[ACTION]-[TARGET] format for procedures\n3. Keep policies under 500 words\n4. Focus on WHAT and WHY in policies\n5. Focus on HOW in procedures\n6. Review quarterly, update as needed\n7. Each document has one owner\n8. Clear language over complex terminology",
+      "policy_owner": "Thomas Russell",
+      "policy_status": "Active"
+    },
+    {
+      "policy_id": "POL-CLAUDE-CONFIG",
+      "title": "Claude/Cline Configuration and Operating Instructions",
+      "purpose": "Dynamic configuration for AI assistants operating in this workspace",
+      "applies_to": "All Claude/Cline sessions connecting to this workspace",
+      "rules": "1. FIRST ACTION: Read this policy for configuration\n2. TRUST INDICATORS: 🟢 Governed, 🔴 Ungoverned, ❌ Blocked\n3. SERVER TIERS: design=no procedures, manage/consume=procedures required for writes\n4. AVAILABLE PROCEDURES: PROC-GMV-DAILY-BRIEFING, PROC-CREATE-DATASET, PROC-UPDATE-RAIDA-STATUS, PROC-EXPORT-DATA-V1, PROC-ANALYZE-SCHEMA-CHANGE, PROC-VALIDATE-DATA-QUALITY\n5. COMMANDS: 'GMV' for daily briefing, 'RAIDA <text>' for new tasks\n6. WRITE OPERATIONS: Use start-procedure first, include __runId\n7. READ OPERATIONS: Always allowed on all tiers\n8. ERROR HANDLING: PROCEDURE_REQUIRED means use design tier or start procedure\n9. DATASET IDS: Dynamically assigned during bootstrap",
+      "policy_owner": "Thomas Russell",
+      "policy_status": "Active"
+    },
+    {
+      "policy_id": "POL-DATASET-MANAGEMENT",
+      "title": "Dataset Management Policy",
+      "purpose": "Defines how datasets are created, modified, and managed in the Operations workspace.",
+      "applies_to": "All datasets in Operations workspace",
+      "rules": "1. Each dataset must have a specialist agent\n2. Schema changes require impact analysis\n3. All changes logged in AI_Model_Change_Log\n4. Data quality validation before promotion\n5. Relationships must be documented\n6. Use AI_Data_Model_Registry for tracking\n7. Test with sample data before production\n8. Maintain referential integrity",
+      "policy_owner": "Sally O'Brien",
+      "policy_status": "Active"
+    },
+    {
+      "policy_id": "POL-AGENT-COORDINATION",
+      "title": "Agent Coordination Policy",
+      "purpose": "Defines how specialist agents work together in the Operations workspace.",
+      "applies_to": "All AI agents in Operations workspace",
+      "rules": "1. Vera coordinates all specialist agents\n2. Each agent owns one primary dataset\n3. Agents escalate issues via RAIDA\n4. Cross-dataset operations require coordination\n5. Agent capabilities defined in AI_Agent_Identity_Ops\n6. Agents report status to Vera\n7. Emergency override by Thomas/Sally only\n8. Performance monitored monthly",
+      "policy_owner": "Thomas Russell",
+      "policy_status": "Active"
+    },
+    {
+      "policy_id": "POL-VISION-001",
+      "title": "AI-Orchestrated Work, Human-Led Direction",
+      "purpose": "Establishes the fundamental principle of AI agents executing work under human strategic direction.",
+      "applies_to": "All AI operations and human interactions in the workspace",
+      "rules": "1. Humans define strategic objectives and priorities\n2. AI agents execute tactical operations autonomously\n3. All AI actions must be traceable to human directives\n4. Humans retain override authority at all times\n5. AI agents report progress via RAIDA entries\n6. Strategic decisions require human approval\n7. Operational decisions delegated to AI agents\n8. Continuous learning from human feedback",
+      "policy_owner": "Thomas Russell",
+      "policy_status": "Active"
+    },
+    {
+      "policy_id": "POL-MCP-GOVERNANCE-001",
+      "title": "MCP Endpoint Governance",
+      "purpose": "Governs access to MCP endpoints with trust indicators and procedure enforcement.",
+      "applies_to": "All MCP server operations across design, manage, and consume tiers",
+      "rules": "1. DESIGN tier: No procedures required (bootstrap capability)\n2. MANAGE tier: WRITE operations require procedures\n3. CONSUME tier: WRITE operations require procedures\n4. READ operations: Free access for analysis\n5. Trust indicators: 🟢 Governed, 🔴 Ungoverned\n6. All operations logged with trust status\n7. Procedures loaded from AI_Agent_Procedures_Ops\n8. Missing procedures block WRITE operations",
+      "policy_owner": "Sally O'Brien",
+      "policy_status": "Active"
+    },
+    {
+      "policy_id": "POL-CLAUDE-ACTIVATION-001",
+      "title": "Silent Bootstrap Protocol",
+      "purpose": "Enables Claude/Cline to initialize workspace governance silently on first connection.",
+      "applies_to": "Claude, Cline, and other AI assistants connecting to the workspace",
+      "rules": "1. Execute PROC-INITIALIZE-CHAT on first connection\n2. No user prompts during initialization\n3. Load available procedures dynamically\n4. Display trust indicators for all operations\n5. Enable GMV command for daily briefings\n6. Support RAIDA creation and completion\n7. Provide procedure list on request\n8. Maintain session state across interactions",
+      "policy_owner": "Thomas Russell",
+      "policy_status": "Active"
+    },
+    {
+      "policy_id": "POL-RAIDA-COMPLETION",
+      "title": "RAIDA Status Transition and Completion Tracking",
+      "purpose": "Defines how RAIDA entries transition through status states and track completion.",
+      "applies_to": "All RAIDA entries in Core_RAIDA dataset",
+      "rules": "1. Status progression: To Do → In Progress → Done\n2. In Progress: Work actively being performed\n3. Done: Work completed and verified\n4. Completion timestamp required for Done status\n5. Completion notes document outcomes\n6. PROC-UPDATE-RAIDA-STATUS manages transitions\n7. Audit trail maintained for all changes\n8. Weekly review of incomplete RAIDAs",
+      "policy_owner": "Sally O'Brien",
+      "policy_status": "Active"
+    }
+  ],
+  "procedures": [
+    {
+      "procedure_id": "PROC-CREATE-DATASET",
+      "title": "Create New Dataset",
+      "purpose": "Standardized process for creating new datasets with proper governance.",
+      "steps": "1. Define dataset purpose and fields\n2. Identify relationships to existing datasets\n3. Create dataset in DRAFT scope\n4. Assign specialist agent\n5. Create validation procedures\n6. Register in AI_Data_Model_Registry\n7. Test with sample data\n8. Promote through STAGE to PUBLISHED",
+      "triggers": "When new dataset is needed",
+      "procedure_owner": "AGENT-DATAMODEL-OPS",
+      "procedure_status": "Active"
+    },
+    {
+      "procedure_id": "PROC-ANALYZE-SCHEMA-CHANGE",
+      "title": "Analyze Schema Change Impact",
+      "purpose": "Assess impact of proposed schema changes across the data model.",
+      "steps": "1. Identify requested change\n2. Query AI_Data_Model_Registry for dependencies\n3. Analyze impact on related datasets\n4. Generate change plan\n5. Create AI_Model_Change_Log entry\n6. Notify affected agents\n7. Execute with rollback plan ready",
+      "triggers": "Before any schema modification",
+      "procedure_owner": "AGENT-DATAMODEL-OPS",
+      "procedure_status": "Active"
+    },
+    {
+      "procedure_id": "PROC-VALIDATE-DATA-QUALITY",
+      "title": "Validate Data Quality",
+      "purpose": "Check data quality standards before promotion or release.",
+      "steps": "1. Check mandatory fields populated\n2. Validate data types match schema\n3. Verify referential integrity\n4. Check business rule compliance\n5. Generate quality score\n6. Create RAIDA for issues\n7. Report to dataset owner",
+      "triggers": "Before dataset promotion",
+      "procedure_owner": "AGENT-DATAMODEL-OPS",
+      "procedure_status": "Active"
+    },
+    {
+      "procedure_id": "PROC-BOOTSTRAP-WORKSPACE",
+      "title": "Bootstrap Workspace Governance",
+      "purpose": "Automated procedure to initialize complete governance framework from bundle.",
+      "steps": "1. Load workspace_bootstrap_bundle.json\n2. Create all governance datasets\n3. Load all policies into Business_Policies_Ops\n4. Load all procedures into AI_Agent_Procedures_Ops\n5. Configure all specialist agents\n6. Initialize data model registry\n7. Create RAIDA entries for each action\n8. Activate full governance mode",
+      "triggers": "Executed once when RAIDA-BOOTSTRAP is initiated",
+      "procedure_owner": "verodat",
+      "procedure_status": "Active"
+    },
+    {
+      "procedure_id": "PROC-INITIALIZE-CHAT",
+      "title": "Initialize Chat Session",
+      "purpose": "Silent initialization of Claude/Cline workspace connection with governance context.",
+      "steps": "1. Connect to workspace MCP servers\n2. Load active procedures from AI_Agent_Procedures_Ops\n3. Query Core_RAIDA for pending tasks\n4. Set trust indicator display mode\n5. Enable GMV command handler\n6. Load user preferences\n7. Create session RAIDA entry\n8. Return ready status silently",
+      "triggers": "On first connection to workspace",
+      "procedure_owner": "AGENT-CLAUDE-OPS",
+      "procedure_status": "Active"
+    },
+    {
+      "procedure_id": "PROC-GMV-DAILY-BRIEFING",
+      "title": "Good Morning Verodat Daily Briefing",
+      "purpose": "Provide daily status briefing including pending RAIDAs and workspace health.",
+      "steps": "1. Query Core_RAIDA for To Do and In Progress items\n2. Check dataset update timestamps\n3. Review procedure execution logs\n4. Analyze workspace health metrics\n5. Generate priority recommendations\n6. Format briefing in structured format\n7. Include trust indicator summary\n8. Create briefing RAIDA entry",
+      "triggers": "GMV command or scheduled daily",
+      "procedure_owner": "AGENT-CLAUDE-OPS",
+      "procedure_status": "Active"
+    },
+    {
+      "procedure_id": "PROC-UPDATE-RAIDA-STATUS",
+      "title": "Update RAIDA Status",
+      "purpose": "Manage RAIDA entry status transitions with proper tracking.",
+      "steps": "1. Validate current status\n2. Check transition rules (To Do → In Progress → Done)\n3. Update Review_Status field\n4. Set completion timestamp if Done\n5. Add completion notes\n6. Update Task_Assignee if needed\n7. Create audit log entry\n8. Notify relevant agents",
+      "triggers": "Status change request",
+      "procedure_owner": "AGENT-RAIDA-OPS",
+      "procedure_status": "Active"
+    },
+    {
+      "procedure_id": "PROC-EXPORT-DATA-V1",
+      "title": "Export Data with Governance",
+      "purpose": "Governed procedure for exporting data from datasets.",
+      "steps": "1. Validate export request parameters\n2. Check user permissions\n3. Query target dataset\n4. Apply filters and transformations\n5. Format data for export\n6. Create export RAIDA entry\n7. Log export in audit trail\n8. Return formatted data",
+      "triggers": "Data export request",
+      "procedure_owner": "AGENT-DATAMODEL-OPS",
+      "procedure_status": "Active"
+    }
+  ],
+  "agents": [
+    {
+      "agent_id": "AGENT-RAIDA-OPS",
+      "agent_name": "RAIDA Management Specialist",
+      "specialization": "RAIDA tracking, audit logging, change management",
+      "primary_dataset": "Core_RAIDA",
+      "tool_permissions": "[\"verodat-manage\", \"verodat-consume\"]",
+      "coordination_role": "Logs all governance changes automatically",
+      "agent_status": "Active"
+    },
+    {
+      "agent_id": "AGENT-DATAMODEL-OPS",
+      "agent_name": "Data Model Governance Agent",
+      "specialization": "Impact analysis, schema changes, relationship management",
+      "primary_dataset": "AI_Data_Model_Registry, AI_Model_Change_Log",
+      "tool_permissions": "[\"verodat-manage\", \"verodat-consume\"]",
+      "coordination_role": "Coordinates all schema changes and model evolution",
+      "agent_status": "Active"
+    },
+    {
+      "agent_id": "AGENT-POLICIES-OPS",
+      "agent_name": "Policy Management Specialist",
+      "specialization": "Policy creation, review schedules, compliance monitoring",
+      "primary_dataset": "Business_Policies_Ops",
+      "tool_permissions": "[\"verodat-manage\", \"verodat-consume\"]",
+      "coordination_role": "Maintains policy governance and health",
+      "agent_status": "Active"
+    },
+    {
+      "agent_id": "AGENT-PROCEDURES-OPS",
+      "agent_name": "Procedure Management Specialist",
+      "specialization": "Procedure creation, execution tracking, optimization",
+      "primary_dataset": "AI_Agent_Procedures_Ops",
+      "tool_permissions": "[\"verodat-manage\", \"verodat-consume\"]",
+      "coordination_role": "Ensures procedure effectiveness and compliance",
+      "agent_status": "Active"
+    },
+    {
+      "agent_id": "AGENT-IDENTITY-OPS",
+      "agent_name": "Agent Configuration Specialist",
+      "specialization": "Agent capabilities, permissions, coordination rules",
+      "primary_dataset": "AI_Agent_Identity_Ops",
+      "tool_permissions": "[\"verodat-manage\", \"verodat-consume\"]",
+      "coordination_role": "Manages agent definitions and coordination",
+      "agent_status": "Active"
+    },
+    {
+      "agent_id": "AGENT-CLAUDE-OPS",
+      "agent_name": "Claude Interface Specialist",
+      "specialization": "Claude/Cline integration, session management, command handling",
+      "primary_dataset": "Core_RAIDA",
+      "tool_permissions": "[\"verodat-design\", \"verodat-manage\", \"verodat-consume\"]",
+      "coordination_role": "Manages Claude/Cline interactions and governance",
+      "agent_status": "Active"
+    }
+  ],
+  "bootstrap_raida": {
+    "Task_Id": "RAIDA-BOOTSTRAP",
+    "Task_Type": "Action",
+    "Task_Description": "Execute PROC-BOOTSTRAP-WORKSPACE to create complete governance framework",
+    "Task_Assignee": "verodat",
+    "Task_Priority": "High",
+    "Task_Notes": "This single action initializes the entire governance framework from the bootstrap bundle",
+    "Source_Type": "Bootstrap",
+    "Source_Id": "workspace_bootstrap_bundle.json",
+    "Review_Status": "To Do"
+  }
+}

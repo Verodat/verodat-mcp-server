@@ -2,14 +2,17 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ToolHandlers } from "./toolHandlers.js";
 import { BaseToolHandler } from "./BaseToolHandler.js";
 import { ManageToolDefinitions } from "./manageToolDefinitions.js";
+import { ServerType } from "../config/serverTypes.js";
 
 /**
  * Tool handler for the MANAGE category
  */
 export class ManageToolHandler extends BaseToolHandler {
-    constructor(server: Server, toolHandlers: ToolHandlers) {
-        super(server, toolHandlers);
+    constructor(server: Server, toolHandlers: ToolHandlers, serverType: ServerType = ServerType.MANAGE) {
+        super(server, toolHandlers, serverType);
         this.setupTools();
+        this.registerProcedureTools(); // Register procedure tools for MANAGE server
+        this.initializeProcedures(); // Initialize procedure system for enforcement
     }
 
     private setupTools(): void {

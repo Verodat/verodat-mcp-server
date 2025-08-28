@@ -1,11 +1,12 @@
 import { BaseToolHandler } from "./BaseToolHandler.js";
 import { DesignToolDefinitions } from "./designToolDefinitions.js";
+import { ServerType } from "../config/serverTypes.js";
 /**
  * Tool handler for the DESIGN category
  */
 export class DesignToolHandler extends BaseToolHandler {
-    constructor(server, toolHandlers) {
-        super(server, toolHandlers);
+    constructor(server, toolHandlers, serverType = ServerType.DESIGN) {
+        super(server, toolHandlers, serverType);
         this.setupTools();
     }
     setupTools() {
@@ -18,5 +19,7 @@ export class DesignToolHandler extends BaseToolHandler {
         this.addTool(DesignToolDefinitions["get-ai-context"], this.toolHandlers.handleGetAIContext.bind(this.toolHandlers));
         this.addTool(DesignToolDefinitions["execute-ai-query"], this.toolHandlers.handleExecuteAIQuery.bind(this.toolHandlers));
         this.addTool(DesignToolDefinitions["create-dataset"], this.toolHandlers.handleCreateDataset.bind(this.toolHandlers));
+        // Critical for bootstrap operations
+        this.addTool(DesignToolDefinitions["upload-dataset-rows"], this.toolHandlers.handleUploadDatasetRows.bind(this.toolHandlers));
     }
 }

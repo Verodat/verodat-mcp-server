@@ -19,7 +19,9 @@ export class ProcedureAuditLogger {
         this.toolHandlers = toolHandlers;
         this.workspaceId = workspaceId;
         this.accountId = accountId;
-        console.log('[ProcedureAuditLogger] Initialized');
+        if (process.argv[2] === 'call') {
+            console.log('[ProcedureAuditLogger] Initialized');
+        }
     }
     /**
      * Cache a procedure for logging purposes
@@ -167,7 +169,9 @@ export class ProcedureAuditLogger {
      */
     async logEvent(event) {
         if (!this.toolHandlers || !this.workspaceId || !this.accountId) {
-            console.warn('[ProcedureAuditLogger] Cannot log - not fully initialized');
+            if (process.argv[2] === 'call') {
+                console.warn('[ProcedureAuditLogger] Cannot log - not fully initialized');
+            }
             return;
         }
         // Add to batch queue
@@ -201,7 +205,9 @@ export class ProcedureAuditLogger {
             // Ensure audit dataset exists
             await this.ensureAuditDataset();
             if (!this.auditDatasetId) {
-                console.error('[ProcedureAuditLogger] Audit dataset not available');
+                if (process.argv[2] === 'call') {
+                    console.error('[ProcedureAuditLogger] Audit dataset not available');
+                }
                 return;
             }
             // Prepare data for upload
@@ -247,10 +253,14 @@ export class ProcedureAuditLogger {
                 data,
                 __systemOperation: 'procedure-logging'
             });
-            console.log(`[ProcedureAuditLogger] Flushed ${events.length} audit events`);
+            if (process.argv[2] === 'call') {
+                console.log(`[ProcedureAuditLogger] Flushed ${events.length} audit events`);
+            }
         }
         catch (error) {
-            console.error('[ProcedureAuditLogger] Failed to flush audit events:', error);
+            if (process.argv[2] === 'call') {
+                console.error('[ProcedureAuditLogger] Failed to flush audit events:', error);
+            }
             // Re-add events to queue for retry
             this.batchQueue.unshift(...events);
         }
@@ -275,7 +285,9 @@ export class ProcedureAuditLogger {
             const auditDataset = datasets.find((ds) => ds.name === 'Procedure Audit Log');
             if (auditDataset) {
                 this.auditDatasetId = auditDataset.id;
-                console.log(`[ProcedureAuditLogger] Using existing audit dataset: ${this.auditDatasetId}`);
+                if (process.argv[2] === 'call') {
+                    console.log(`[ProcedureAuditLogger] Using existing audit dataset: ${this.auditDatasetId}`);
+                }
             }
             else {
                 // Create the dataset if it doesn't exist
@@ -302,11 +314,15 @@ export class ProcedureAuditLogger {
                 });
                 const created = JSON.parse(createResult.content[0].text);
                 this.auditDatasetId = created.id;
-                console.log(`[ProcedureAuditLogger] Created audit dataset: ${this.auditDatasetId}`);
+                if (process.argv[2] === 'call') {
+                    console.log(`[ProcedureAuditLogger] Created audit dataset: ${this.auditDatasetId}`);
+                }
             }
         }
         catch (error) {
-            console.error('[ProcedureAuditLogger] Failed to ensure audit dataset:', error);
+            if (process.argv[2] === 'call') {
+                console.error('[ProcedureAuditLogger] Failed to ensure audit dataset:', error);
+            }
         }
     }
     /**

@@ -18,7 +18,9 @@ export class StepExecutor {
      * Execute a procedure step
      */
     async executeStep(step, context, previousResponses) {
-        console.log(`Executing step: ${step.id} (${step.type})`);
+        if (process.argv[2] === 'call') {
+            console.log(`Executing step: ${step.id} (${step.type})`);
+        }
         // Check skip conditions
         if (this.shouldSkipStep(step, context, previousResponses)) {
             return {
@@ -60,7 +62,9 @@ export class StepExecutor {
             return result;
         }
         catch (error) {
-            console.error(`Error executing step ${step.id}:`, error);
+            if (process.argv[2] === 'call') {
+                console.error(`Error executing step ${step.id}:`, error);
+            }
             // Handle timeout callback
             if (error instanceof TimeoutError && step.onTimeout) {
                 await this.executeCallback(step.onTimeout, context, {
@@ -132,7 +136,9 @@ export class StepExecutor {
                 break;
             case 'confirmation':
                 // In a real implementation, this would wait for user confirmation
-                console.log(`Waiting for confirmation: ${step.message}`);
+                if (process.argv[2] === 'call') {
+                    console.log(`Waiting for confirmation: ${step.message}`);
+                }
                 break;
         }
         return {
@@ -147,7 +153,9 @@ export class StepExecutor {
      */
     async executeInformationStep(step, context) {
         // Display information
-        console.log(`Information: ${step.content}`);
+        if (process.argv[2] === 'call') {
+            console.log(`Information: ${step.content}`);
+        }
         // In a real implementation, this would display to the user and wait for acknowledgment if required
         const infoResult = {
             acknowledged: step.acknowledgmentRequired,
@@ -203,7 +211,9 @@ export class StepExecutor {
         catch (error) {
             // Handle compensating action if configured
             if (step.compensatingAction) {
-                console.log(`Executing compensating action: ${step.compensatingAction}`);
+                if (process.argv[2] === 'call') {
+                    console.log(`Executing compensating action: ${step.compensatingAction}`);
+                }
                 // Execute compensating action
             }
             throw error;
@@ -247,7 +257,9 @@ export class StepExecutor {
             return false;
         }
         catch (error) {
-            console.error(`Error evaluating condition: ${condition}`, error);
+            if (process.argv[2] === 'call') {
+                console.error(`Error evaluating condition: ${condition}`, error);
+            }
             return false;
         }
     }
@@ -255,7 +267,9 @@ export class StepExecutor {
      * Execute a callback
      */
     async executeCallback(callback, context, result) {
-        console.log(`Executing callback: ${callback}`);
+        if (process.argv[2] === 'call') {
+            console.log(`Executing callback: ${callback}`);
+        }
         // In a real implementation, this would execute the callback action
     }
     /**
@@ -337,7 +351,9 @@ export class StepExecutor {
             // Calculate and apply retry delay
             if (attempts < maxAttempts) {
                 const delay = this.calculateRetryDelay(step.id, attempts);
-                console.log(`Retrying step ${step.id} after ${delay}ms (attempt ${attempts + 1}/${maxAttempts})`);
+                if (process.argv[2] === 'call') {
+                    console.log(`Retrying step ${step.id} after ${delay}ms (attempt ${attempts + 1}/${maxAttempts})`);
+                }
                 await this.delay(delay);
             }
         }

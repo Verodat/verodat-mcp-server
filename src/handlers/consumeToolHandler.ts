@@ -2,13 +2,14 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ToolHandlers } from "./toolHandlers.js";
 import { BaseToolHandler } from "./BaseToolHandler.js";
 import { ConsumeToolDefinitions } from "./consumeToolDefinitions.js";
+import { ServerType } from "../config/serverTypes.js";
 
 /**
  * Tool handler for the CONSUME category
  */
 export class ConsumeToolHandler extends BaseToolHandler {
-    constructor(server: Server, toolHandlers: ToolHandlers) {
-        super(server, toolHandlers);
+    constructor(server: Server, toolHandlers: ToolHandlers, serverType: ServerType = ServerType.CONSUME) {
+        super(server, toolHandlers, serverType);
         this.setupTools();
         this.registerProcedureTools(); // Register procedure tools
         this.initializeProcedures(); // Initialize procedure system

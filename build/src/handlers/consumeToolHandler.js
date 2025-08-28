@@ -1,11 +1,12 @@
 import { BaseToolHandler } from "./BaseToolHandler.js";
 import { ConsumeToolDefinitions } from "./consumeToolDefinitions.js";
+import { ServerType } from "../config/serverTypes.js";
 /**
  * Tool handler for the CONSUME category
  */
 export class ConsumeToolHandler extends BaseToolHandler {
-    constructor(server, toolHandlers) {
-        super(server, toolHandlers);
+    constructor(server, toolHandlers, serverType = ServerType.CONSUME) {
+        super(server, toolHandlers, serverType);
         this.setupTools();
         this.registerProcedureTools(); // Register procedure tools
         this.initializeProcedures(); // Initialize procedure system

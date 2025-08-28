@@ -2,13 +2,14 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ToolHandlers } from "./toolHandlers.js";
 import { BaseToolHandler } from "./BaseToolHandler.js";
 import { DesignToolDefinitions } from "./designToolDefinitions.js";
+import { ServerType } from "../config/serverTypes.js";
 
 /**
  * Tool handler for the DESIGN category
  */
 export class DesignToolHandler extends BaseToolHandler {
-    constructor(server: Server, toolHandlers: ToolHandlers) {
-        super(server, toolHandlers);
+    constructor(server: Server, toolHandlers: ToolHandlers, serverType: ServerType = ServerType.DESIGN) {
+        super(server, toolHandlers, serverType);
         this.setupTools();
     }
 
@@ -56,6 +57,12 @@ export class DesignToolHandler extends BaseToolHandler {
         this.addTool(
             DesignToolDefinitions["create-dataset"],
             this.toolHandlers.handleCreateDataset.bind(this.toolHandlers)
+        );
+        
+        // Critical for bootstrap operations
+        this.addTool(
+            DesignToolDefinitions["upload-dataset-rows"],
+            this.toolHandlers.handleUploadDatasetRows.bind(this.toolHandlers)
         );
     }
 }

@@ -5,6 +5,7 @@ import { procedureService } from "../services/procedureService.js";
 import { procedureLoader } from "../services/procedureLoader.js";
 import { StartProcedureHandler } from "./startProcedureHandler.js";
 import { isReadOperation, isWriteOperation, getOperationType } from "../config/operationTypes.js";
+import { ServerType, getServerEnforcementConfig, shouldEnforceProcedure } from "../config/serverTypes.js";
 
 export interface ToolDefinition {
     name: string;
@@ -22,23 +23,66 @@ export class BaseToolHandler {
     protected toolDefinitions: ToolDefinition[] = [];
     protected toolHandlerMap: Map<string, (args: unknown) => Promise<any>> = new Map();
     protected procedureEnforcementEnabled: boolean = false;
+    protected serverType: ServerType;
+    protected enforceOnRead: boolean = false;
+    protected enforceOnWrite: boolean = true;
 
-    constructor(server: Server, toolHandlers: ToolHandlers) {
+    constructor(server: Server, toolHandlers: ToolHandlers, serverType: ServerType = ServerType.CONSUME) {
         this.server = server;
         this.toolHandlers = toolHandlers;
+        this.serverType = serverType;
+        this.configureEnforcement();
+    }
+
+    /**
+     * Configure procedure enforcement based on server type
+     */
+    private configureEnforcement(): void {
+        const config = getServerEnforcementConfig(this.serverType);
+        this.procedureEnforcementEnabled = config.enforceProcedures;
+        this.enforceOnRead = config.enforceOnRead;
+        this.enforceOnWrite = config.enforceOnWrite;
+        
+        // Only log in test mode (when called with 'call' argument)
+        if (process.argv[2] === 'call') {
+            console.log(`[${this.serverType.toUpperCase()}] Server configured:`, {
+                enforceProcedures: this.procedureEnforcementEnabled,
+                enforceOnRead: this.enforceOnRead,
+                enforceOnWrite: this.enforceOnWrite
+            });
+        }
     }
 
     /**
      * Initialize procedure system
      */
     async initializeProcedures(): Promise<void> {
+        // Skip procedure initialization for DESIGN server
+        if (this.serverType === ServerType.DESIGN) {
+            if (process.argv[2] === 'call') {
+                console.log(`[${this.serverType.toUpperCase()}] Skipping procedure system initialization (not needed for Design server)`);
+            }
+            return;
+        }
+        
         try {
             await procedureService.initialize(this.toolHandlers);
-            this.procedureEnforcementEnabled = true;
-            console.log('Procedure system initialized');
+            // Re-apply enforcement settings after initialization
+            const config = getServerEnforcementConfig(this.serverType);
+            this.procedureEnforcementEnabled = config.enforceProcedures;
+            if (process.argv[2] === 'call') {
+                console.log(`[${this.serverType.toUpperCase()}] Procedure system initialized with enforcement: ${this.procedureEnforcementEnabled}`);
+            }
         } catch (error) {
-            console.error('Failed to initialize procedure system:', error);
-            this.procedureEnforcementEnabled = false;
+            if (process.argv[2] === 'call') {
+                console.error(`[${this.serverType.toUpperCase()}] Failed to initialize procedure system:`, error);
+            }
+            // Still enable enforcement for MANAGE/CONSUME even if procedure loading fails
+            const config = getServerEnforcementConfig(this.serverType);
+            this.procedureEnforcementEnabled = config.enforceProcedures;
+            if (process.argv[2] === 'call') {
+                console.log(`[${this.serverType.toUpperCase()}] Using enforcement despite initialization failure: ${this.procedureEnforcementEnabled}`);
+            }
         }
     }
 
@@ -103,6 +147,14 @@ export class BaseToolHandler {
         reason?: string;
         runId?: string;
     }> {
+        // DESIGN SERVER: Never require procedures
+        if (this.serverType === ServerType.DESIGN) {
+            if (process.argv[2] === 'call') {
+                console.log(`[${this.serverType.toUpperCase()}] Operation ${toolName} allowed without procedure (Design server)`);
+            }
+            return { required: false };
+        }
+
         // SECURITY: Only accept system operations from internal sources
         // The __systemOperation flag must come from procedureLoader, not external calls
         if (args && args.__systemOperation === 'procedure-loading') {
@@ -111,11 +163,15 @@ export class BaseToolHandler {
             if (caller && caller.includes('procedureLoader')) {
                 // Remove flag before passing to tool to prevent propagation
                 delete args.__systemOperation;
-                console.log(`[SECURITY] System operation allowed for ${toolName} from procedureLoader`);
+                if (process.argv[2] === 'call') {
+                    console.log(`[SECURITY] System operation allowed for ${toolName} from procedureLoader`);
+                }
                 return { required: false };
             }
             // If not from procedureLoader, log potential hack attempt and ignore the flag
-            console.warn(`[SECURITY WARNING] Unauthorized __systemOperation flag detected for ${toolName}`);
+            if (process.argv[2] === 'call') {
+                console.warn(`[SECURITY WARNING] Unauthorized __systemOperation flag detected for ${toolName}`);
+            }
             delete args.__systemOperation; // Remove the flag anyway
         }
 
@@ -125,55 +181,42 @@ export class BaseToolHandler {
             return { required: false };
         }
 
-        // Check if this is a READ operation - skip by default unless explicitly required
-        if (isReadOperation(toolName)) {
-            // Only check for procedures that explicitly enforce on READ operations
-            const context = await this.discoverProcedureContext(toolName, args);
-            const procedures = await procedureLoader.findApplicableProcedures(context);
-            
+        // Determine if we should enforce based on operation type and server configuration
+        const isRead = isReadOperation(toolName);
+        const shouldEnforce = shouldEnforceProcedure(this.serverType, isRead);
+        
+        if (!shouldEnforce) {
+            if (process.argv[2] === 'call') {
+                console.log(`[${this.serverType.toUpperCase()}] ${isRead ? 'READ' : 'WRITE'} operation ${toolName} allowed without procedure`);
+            }
+            return { required: false };
+        }
+
+        // If we get here, we need to check for applicable procedures
+        if (process.argv[2] === 'call') {
+            console.log(`[${this.serverType.toUpperCase()}] ${isRead ? 'READ' : 'WRITE'} operation ${toolName} checking for required procedures`);
+        }
+        
+        const context = await this.discoverProcedureContext(toolName, args);
+        const procedures = await procedureLoader.findApplicableProcedures(context);
+        
+        // For READ operations that need enforcement, check for enforceOnRead flag
+        if (isRead) {
             // Filter to only procedures that explicitly enforce on READ
             const readEnforcingProcedures = procedures.filter(p => p.triggers.enforceOnRead === true);
             
             if (readEnforcingProcedures.length === 0) {
-                console.log(`[PROCEDURE] READ operation ${toolName} allowed without procedure`);
+                if (process.argv[2] === 'call') {
+                    console.log(`[${this.serverType.toUpperCase()}] No READ-enforcing procedures found for ${toolName}`);
+                }
                 return { required: false };
             }
             
-            // Use the highest priority procedure that enforces on READ
             const procedure = readEnforcingProcedures[0];
-            console.log(`[PROCEDURE] READ operation ${toolName} requires procedure ${procedure.id} (enforceOnRead=true)`);
-            
-            // Check if there's an active run for this procedure
-            const result = await procedureService.checkProcedureRequirement({
-                toolName,
-                operation: context.operation
-            });
-            
-            return {
-                required: !result.allowed,
-                procedure: result.procedureRequired,
-                reason: result.reason,
-                runId: result.runId
-            };
-        }
-        
-        // For WRITE operations, always check procedures
-        if (isWriteOperation(toolName)) {
-            console.log(`[PROCEDURE] WRITE operation ${toolName} checking for required procedures`);
-            
-            const context = await this.discoverProcedureContext(toolName, args);
-            const procedures = await procedureLoader.findApplicableProcedures(context);
-            
-            if (procedures.length === 0) {
-                console.log(`[PROCEDURE] No procedures found for WRITE operation ${toolName}`);
-                return { required: false };
+            if (process.argv[2] === 'call') {
+                console.log(`[${this.serverType.toUpperCase()}] READ operation ${toolName} requires procedure ${procedure.id} (enforceOnRead=true)`);
             }
             
-            // Use the highest priority procedure
-            const procedure = procedures[0];
-            console.log(`[PROCEDURE] WRITE operation ${toolName} requires procedure ${procedure.id}`);
-            
-            // Check if there's an active run for this procedure
             const result = await procedureService.checkProcedureRequirement({
                 toolName,
                 operation: context.operation
@@ -182,13 +225,41 @@ export class BaseToolHandler {
             return {
                 required: !result.allowed,
                 procedure: result.procedureRequired,
-                reason: result.reason,
+                reason: result.reason || 'This READ operation requires procedure for audit trail',
                 runId: result.runId
             };
         }
         
-        // Default case - shouldn't happen but for safety
-        return { required: false };
+        // For WRITE operations
+        if (procedures.length === 0) {
+            if (process.argv[2] === 'call') {
+                console.log(`[${this.serverType.toUpperCase()}] No procedures found for WRITE operation ${toolName}, but enforcement is required`);
+            }
+            // For MANAGE/CONSUME servers, WRITE operations must be blocked even without procedures
+            return {
+                required: true,
+                procedure: null,
+                reason: 'This WRITE operation requires a procedure for governance. No procedures are currently available.',
+                runId: undefined
+            };
+        }
+        
+        const procedure = procedures[0];
+        if (process.argv[2] === 'call') {
+            console.log(`[${this.serverType.toUpperCase()}] WRITE operation ${toolName} requires procedure ${procedure.id}`);
+        }
+        
+        const result = await procedureService.checkProcedureRequirement({
+            toolName,
+            operation: context.operation
+        });
+        
+        return {
+            required: !result.allowed,
+            procedure: result.procedureRequired,
+            reason: result.reason || 'This WRITE operation requires procedure for governance',
+            runId: result.runId
+        };
     }
 
     /**

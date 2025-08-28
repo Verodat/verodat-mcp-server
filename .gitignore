@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs
+*.log
+test-output/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Local workspace-specific files
+workspace-*-instructions.md
+workspace-*-setup-report.txt
+
+# Temporary data files
+*-upload-data.json
+*-upload-fixed.json
+
+# Implementation tracking (keep in feature branch only)
+IMPLEMENTATION_*.md
+implementation_*.md
