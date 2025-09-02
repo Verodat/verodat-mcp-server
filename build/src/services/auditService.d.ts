@@ -44,12 +44,18 @@ export declare class AuditService {
     private currentLogFile;
     private maxMemoryEntries;
     private flushTimer;
+    private initialized;
+    private initPromise;
     private constructor();
     static getInstance(): AuditService;
     /**
-     * Initialize audit directory
+     * Initialize audit directory - ensures it's only done once and properly awaited
      */
     private initializeAuditDir;
+    /**
+     * Actually perform the initialization
+     */
+    private doInitialize;
     /**
      * Generate log file name based on current date
      */

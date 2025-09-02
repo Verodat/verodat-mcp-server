@@ -60,11 +60,12 @@ export class AuditService {
   private currentLogFile: string;
   private maxMemoryEntries: number = 1000;
   private flushTimer: NodeJS.Timeout | null = null;
+  private initialized: boolean = false;
+  private initPromise: Promise<void> | null = null;
 
   private constructor() {
     this.auditDir = path.join(storageConfig.stateDirectory, 'audit');
     this.currentLogFile = this.getLogFileName();
-    this.initializeAuditDir();
   }
 
   static getInstance(): AuditService {
@@ -75,13 +76,42 @@ export class AuditService {
   }
 
   /**
-   * Initialize audit directory
+   * Initialize audit directory - ensures it's only done once and properly awaited
    */
   private async initializeAuditDir(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    this.initPromise = this.doInitialize();
+    return this.initPromise;
+  }
+
+  /**
+   * Actually perform the initialization
+   */
+  private async doInitialize(): Promise<void> {
     try {
+      // First ensure the parent state directory exists
+      await fs.mkdir(storageConfig.stateDirectory, { recursive: true });
+      
+      // Then create the audit subdirectory
       await fs.mkdir(this.auditDir, { recursive: true });
+      
+      this.initialized = true;
+      
+      if (process.argv[2] === 'call') {
+        console.log(`[AuditService] Initialized audit directory: ${this.auditDir}`);
+      }
     } catch (error) {
       console.error('[AuditService] Failed to create audit directory:', error);
+      // Don't mark as initialized so it can retry later
+      this.initPromise = null;
+      throw error;
     }
   }
 
@@ -213,6 +243,14 @@ export class AuditService {
    * Core logging function
    */
   private async logEntry(params: Partial<AuditEntry>): Promise<void> {
+    // Ensure audit directory is initialized before logging
+    try {
+      await this.initializeAuditDir();
+    } catch (error) {
+      // If initialization fails, just log to console and memory
+      console.error('[AuditService] Directory initialization failed, logging to memory only');
+    }
+
     const entry: AuditEntry = {
       id: this.generateEntryId(),
       timestamp: new Date().toISOString(),
@@ -231,8 +269,10 @@ export class AuditService {
       this.auditLog = this.auditLog.slice(-this.maxMemoryEntries);
     }
 
-    // Schedule flush to disk
-    this.scheduleFlush();
+    // Only schedule flush if initialized successfully
+    if (this.initialized) {
+      this.scheduleFlush();
+    }
 
     // Log to console in test mode
     if (process.argv[2] === 'call') {
@@ -266,14 +306,14 @@ export class AuditService {
    * Flush audit entries to disk
    */
   private async flushToDisk(): Promise<void> {
-    if (this.auditLog.length === 0) {
+    if (this.auditLog.length === 0 || !this.initialized) {
       return;
     }
 
+    // Get entries to flush (declare outside try-catch for error handling)
+    const entriesToFlush = [...this.auditLog];
+
     try {
-      // Get entries to flush
-      const entriesToFlush = [...this.auditLog];
-      
       // Clear memory log
       this.auditLog = [];
 
@@ -290,7 +330,7 @@ export class AuditService {
     } catch (error) {
       console.error('[AuditService] Failed to flush audit log to disk:', error);
       // Re-add entries to memory log on failure
-      this.auditLog.unshift(...this.auditLog);
+      this.auditLog.unshift(...entriesToFlush);
     }
   }
 
