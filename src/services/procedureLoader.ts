@@ -20,12 +20,13 @@ interface CacheEntry {
 }
 
 interface ProcedureDatasetRow {
-  id: string;
-  name: string;
-  procedures_protocols: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  procedure_id: string;
+  title: string;
+  purpose: string;
+  steps: string;
+  triggers: string;
+  procedure_owner: string;
+  procedure_status: string;
 }
 
 export class ProcedureLoader {
@@ -80,33 +81,42 @@ export class ProcedureLoader {
     return Array.from(this.cache.values()).map(entry => entry.procedure);
   }
 
-  /**
-   * Refresh procedures from Verodat
-   */
-  private async refreshProcedures(): Promise<void> {
-    try {
-      if (process.argv[2] === 'call') {
-        console.log('Refreshing procedures from Verodat...');
-      }
-      
-      // Get workspace and account info from handler
-      const workspaceId = this.verodatHandler.workspaceId || this.config.verodat.defaultWorkspaceId;
-      const accountId = this.verodatHandler.accountId || this.config.verodat.defaultAccountId;
-      
-      // Query for AI_Agent_Procedures dataset - support both regular and _Ops variants
-      const datasetsResult = await this.verodatHandler.handle({
-        method: 'tools/call',
-        params: {
-          name: 'get-datasets',
-          arguments: {
-            workspaceId,
-            accountId,
-            filter: 'vscope=PUBLISHED and vstate=ACTIVE',
-            max: 100,
-            __systemOperation: 'procedure-loading'  // System flag for loading procedures
-          }
-        }
-      });
+    /**
+     * Refresh procedures from Verodat
+     */
+    async refreshProcedures() {
+        try {
+            if (process.argv[2] === 'call') {
+                console.log('Refreshing procedures from Verodat...');
+            }
+
+            // Get workspace and account info from handler
+            const workspaceId = this.verodatHandler.workspaceId || this.config.verodat.defaultWorkspaceId;
+            const accountId = this.verodatHandler.accountId || this.config.verodat.defaultAccountId;
+
+            // Check if we have the required IDs
+            if (!workspaceId || !accountId) {
+                if (process.argv[2] === 'call') {
+                    console.log('No workspace or account ID available. Skipping procedure loading.');
+                }
+                this.loadDefaultProcedures();
+                return;
+            }
+
+            // Query for AI_Agent_Procedures dataset - support both regular and _Ops variants
+            const datasetsResult = await this.verodatHandler.handle({
+                method: 'tools/call',
+                params: {
+                    name: 'get-datasets',
+                    arguments: {
+                        workspaceId,
+                        accountId,
+                        filter: 'vscope=PUBLISHED and vstate=ACTIVE',
+                        max: 100,
+                        __systemOperation: 'procedure-loading' // System flag for loading procedures
+                    }
+                }
+            });
 
       const datasets = datasetsResult?.content?.[0]?.data || [];
       
@@ -150,27 +160,58 @@ export class ProcedureLoader {
       // Clear cache before loading new procedures
       this.cache.clear();
       
-      // Parse and cache procedures
+      // Parse and cache procedures from bootstrap format
       for (const row of rows) {
         try {
-          if (row.procedures_protocols) {
-            const procedures = ProcedureParser.parseProceduresProtocol(row.procedures_protocols);
+          if (row.procedure_id && row.procedure_status === 'Active') {
+            // Convert bootstrap format to procedure format
+            const procedureData = {
+              id: row.procedure_id,
+              name: row.title,
+              description: row.purpose,
+              purpose: row.purpose,
+              steps: this.parseStepsFromBootstrapFormat(row.steps),
+              triggers: this.parseTriggersFromBootstrapFormat(row.triggers),
+              metadata: {
+                createdBy: row.procedure_owner,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                tags: [],
+                category: 'governance',
+                priority: 'normal',
+                estimatedDuration: 300,
+                riskLevel: 'low'
+              },
+              requirements: {},
+              validation: {
+                preConditions: [],
+                postConditions: [],
+                invariants: []
+              },
+              audit: {
+                required: true,
+                level: 'full',
+                retention: 90
+              },
+              isActive: row.procedure_status === 'Active',
+              effectiveFrom: new Date().toISOString(),
+              appliesTo: { roles: [], departments: [], operations: [] }
+            };
+
+            // Create and validate the procedure using the public method
+            const procedure = this.convertBootstrapToProcedure(procedureData);
             
-            for (const procedure of procedures) {
-              // Only cache active procedures
-              if (procedure.isActive) {
-                this.cache.set(procedure.id, {
-                  procedure,
-                  timestamp: Date.now(),
-                  accessCount: 0,
-                  lastAccessed: Date.now()
-                });
-              }
-            }
+            // Cache the procedure
+            this.cache.set(procedure.id, {
+              procedure,
+              timestamp: Date.now(),
+              accessCount: 0,
+              lastAccessed: Date.now()
+            });
           }
         } catch (error) {
           if (process.argv[2] === 'call') {
-            console.error(`Failed to parse procedure from row ${row.id}:`, error);
+            console.error(`Failed to parse procedure from row ${row.procedure_id}:`, error);
           }
         }
       }
@@ -342,6 +383,70 @@ export class ProcedureLoader {
     for (let i = 0; i < toRemove; i++) {
       this.cache.delete(entries[i][0]);
     }
+  }
+
+  /**
+   * Parse steps from bootstrap format
+   */
+  private parseStepsFromBootstrapFormat(stepsString: string): any[] {
+    try {
+      // Parse the steps string - it might be numbered list format
+      const lines = stepsString.split('\n').filter(line => line.trim());
+      return lines.map((step, index) => ({
+        id: `step-${index + 1}`,
+        name: step.replace(/^\d+\.\s*/, ''), // Remove number prefix
+        type: 'information',
+        description: step.replace(/^\d+\.\s*/, ''),
+        required: true,
+        content: step.replace(/^\d+\.\s*/, ''),
+        acknowledgmentRequired: true
+      }));
+    } catch (error) {
+      // Fallback to simple step
+      return [{
+        id: 'step-1',
+        name: 'Execute Procedure',
+        type: 'information',
+        description: stepsString,
+        required: true,
+        content: stepsString,
+        acknowledgmentRequired: true
+      }];
+    }
+  }
+
+  /**
+   * Parse triggers from bootstrap format
+   */
+  private parseTriggersFromBootstrapFormat(triggersString: string): { tools: string[]; operations: string[]; conditions: string[] } {
+    return {
+      tools: [],
+      operations: [triggersString], // Use the trigger string as an operation
+      conditions: []
+    };
+  }
+
+  /**
+   * Convert bootstrap data to procedure format
+   */
+  private convertBootstrapToProcedure(procedureData: any): Procedure {
+    return {
+      id: procedureData.id,
+      name: procedureData.name,
+      description: procedureData.description,
+      version: '1.0.0',
+      purpose: procedureData.purpose,
+      triggers: procedureData.triggers,
+      requirements: procedureData.requirements,
+      steps: procedureData.steps,
+      metadata: procedureData.metadata,
+      validation: procedureData.validation,
+      audit: procedureData.audit,
+      isActive: procedureData.isActive,
+      effectiveFrom: procedureData.effectiveFrom,
+      effectiveTo: procedureData.effectiveTo,
+      appliesTo: procedureData.appliesTo
+    };
   }
 
   /**

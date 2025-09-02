@@ -1,21 +1,36 @@
 #!/bin/bash
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║       VERODAT WORKSPACE INTERACTIVE BOOTSTRAP              ║"
+echo "║       VERODAT WORKSPACE CLINE-NATIVE BOOTSTRAP             ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
-echo "This script will:"
-echo "  1. Let you select an account and workspace interactively"
-echo "  2. Create governance datasets in DRAFT"
-echo "  3. Guide you through promotion to PUBLISHED"
-echo "  4. Load all governance data"
-echo "  5. Track progress with RAIDA updates"
+echo "⚠️  IMPORTANT: This bootstrap is designed for Cline execution!"
 echo ""
-echo "Starting interactive bootstrap..."
+echo "This bootstrap process:"
+echo "  1. Uses MCP tools directly within Cline"
+echo "  2. Provides structured execution plan"
+echo "  3. Eliminates terminal interaction dependencies"
+echo "  4. Tracks progress with proper RAIDA updates"
+echo "  5. Validates procedure loading fixes"
+echo ""
+echo "EXECUTION INSTRUCTIONS:"
+echo "  • Run this within Cline (not terminal)"
+echo "  • Follow the execution plan step by step"
+echo "  • Use MCP tool calls provided for each step"
+echo ""
+echo "Getting execution plan..."
 echo ""
 
-# Run the interactive bootstrap
-node raida-bootstrap-interactive.cjs
+# Run the Cline-native bootstrap
+node raida-bootstrap-cline-native.cjs
 
 echo ""
-echo "Bootstrap process completed!"
+echo "📋 Execution plan generated!"
+echo ""
+echo "🎯 NEXT STEPS:"
+echo "  1. Copy this execution plan"
+echo "  2. Execute within Cline using MCP tools"
+echo "  3. Follow each phase sequentially"
+echo "  4. Track dataset IDs as they are created"
+echo ""
+echo "✅ Bootstrap preparation complete!"
