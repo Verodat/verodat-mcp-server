@@ -1,5 +1,32 @@
 import { ToolDefinition } from "./BaseToolHandler.js";
 
+/**
+ * VERODAT MANAGE TOOLS — Data Engineer Role
+ * 
+ * Purpose: Uploading data, processing assets, committing changes, promoting schemas, and managing environments.
+ * Use for: Data uploads, asset lifecycle (upload→verify→commit), schema promotion, environment management,
+ *          validation rules, mappings, and all write operations.
+ * Do NOT use for: Creating new datasets from scratch (use verodat-design) or pure analytical queries 
+ *          on published data (use verodat-consume, though manage can also run queries when needed).
+ * 
+ * When all three Verodat servers are available (consume, design, manage):
+ *   - verodat-consume: Data analyst work — querying and reading published data
+ *   - verodat-design:  Data architect work — creating datasets, designing schemas, building data models
+ *   - verodat-manage:  Data engineer work — uploading data, committing assets, promoting schemas, managing environments
+ * 
+ * ENVIRONMENT MODEL:
+ *   DRAFT (Design)    → For building/testing schema. Only TEST data should exist here.
+ *   STAGED (Staging)   → For validating schema changes against sample production data.
+ *                       Use manage tools to check staged data before promoting to production.
+ *   PUBLISHED (Prod)   → Live production environment. This is where real data should be uploaded.
+ *                       Schema must be promoted here for Snowflake SQL queries to work.
+ *   NOTE: Promotion (DRAFT→STAGED→PUBLISHED) moves SCHEMA ONLY. Data is always live regardless of scope.
+ *   
+ * COMMON WORKFLOWS:
+ *   Data upload:    get-dataset-targetfields → upload-dataset-rows → get-asset-state → commit-asset
+ *   Schema promote: dataset-promote-configuration (DRAFT) → get-promotion-progress → dataset-promote-configuration (STAGED)
+ *   SQL queries:    get-ai-context → execute-ai-query
+ */
 export const ManageToolDefinitions: Record<string, ToolDefinition> = {
     "get-datasets": {
         name: "get-datasets",
@@ -81,6 +108,15 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
         Tool Description:
         Retrieves actual data records from a dataset for management and administrative review.
         
+        ⚠️ CRITICAL - NULL FIELD HANDLING:
+        When datasets contain null/empty values in fields, the returned data columns can SHIFT, 
+        causing data misalignment. When processing returned data:
+        - ALWAYS use the returned header row to map column positions to field names
+        - Do NOT assume column positions are fixed — null fields may cause columns to shift
+        - When using this data in downstream SQL queries (via execute-ai-query), wrap nullable 
+          fields with COALESCE(field_name, '') to prevent column shifting in results
+        - Validate row lengths match the header count before processing
+        
         Required parameters:
         - datasetId: dataset ID to get data output for
         - workspaceId: Workspace ID to query
@@ -146,6 +182,17 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
         
         Tool Description:
         Retrieves available accounts for administrative management purposes.
+        
+        SERVER ROLE: This is a verodat-manage tool (Data Engineer role).
+        Use manage tools for: uploading data, committing assets, promoting schemas, validation rules, mappings.
+        Use verodat-consume for: reading published data, running SQL queries, analysis.
+        Use verodat-design for: creating new datasets, defining schemas, building data models.
+        
+        ENVIRONMENT MODEL:
+        - DRAFT: Test data only. For schema design and testing.
+        - STAGED: Sample production data. For validating schema changes before go-live.
+        - PUBLISHED: Live production. Real data is uploaded here. SQL queries run against this scope.
+        - Promotion moves SCHEMA ONLY, not data. Data is always live.
         `,
         inputSchema: {
             type: "object",
@@ -194,9 +241,16 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
         - When reviewing field consistency across datasets
         - When checking for mandatory field compliance
         - When planning schema modifications or updates
+        - ALWAYS call this before upload-dataset-rows to understand the required schema
         
         Tool Description:
         Retrieves target fields configuration for administrative review and management.
+        
+        ⚠️ IMPORTANT NOTES:
+        - Target field types use: "string", "number", "integer", "date"
+        - But upload-dataset-rows header types use: "string", "numeric", "date" (note: "numeric" NOT "number")
+        - Fields with isKeyComponent=true form the dataset's primary key (can be compound if isCompound=true)
+        - Fields with mandatory=true MUST be included in every upload row
         
         Required parameters:
         - accountId: Account ID where the workspace belongs
@@ -320,6 +374,7 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
     "get-ai-context": {
         name: "get-ai-context",
         description: `WHEN TO USE:
+        - ALWAYS call this BEFORE using execute-ai-query — it provides the schema needed to write correct SQL
         - When performing comprehensive workspace audits
         - When validating overall workspace configuration
         - When reviewing data relationships and dependencies
@@ -328,6 +383,11 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
         
         Tool Description:
         Retrieves comprehensive workspace context for administrative oversight and management.
+        This returns dataset schemas, field definitions, validation rules, and relationships 
+        that are ESSENTIAL for writing correct SQL queries via execute-ai-query.
+        
+        WORKFLOW: Always call get-ai-context FIRST, then use the schema information 
+        it returns to construct your SQL query for execute-ai-query.
         
         Required parameters:
         - workspaceId: Target workspace ID
@@ -500,34 +560,55 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
     "execute-ai-query": {
         name: "execute-ai-query",
         description: `WHEN TO USE:
-        - When generating administrative reports on data
+        - When generating administrative reports on data using SQL queries
         - When auditing data for compliance or quality issues
         - When validating data integrity across datasets
         - When checking for data inconsistencies or anomalies
-        - When performing system-level data operations
+        - When performing cross-dataset joins and aggregations
         
         Tool Description:
-        Executes AI-powered queries for administrative and management purposes.  
+        Executes SQL queries against Snowflake views of published datasets.
 
-        IMPORTANT: 
-        - Before using this tool, ALWAYS invoke the "get-ai-context" tool first with to etrieve the exact schema structure of the data model
-        - When determining foreign key relationships between tables, 
-            - use the LOOKUP_EXISTS validation rules. These act as constraints on the child dataset. 
-            - For example, LOOKUP_EXISTS("Products","unique_id",row["Product Id"]) means that the column "Product Id" is in a child dataset and is referencing the Primary Key of the parent dataset called "Products", 
-            - where the primary key in this table is called "Unique Id". 
-            - The primary key of the parent table can be found from the "isKeyComponent": true. 
-            - Note that the primary key can be a compound key (indicated by "isKeyComponent": true, "isCompound": true).
+        ⚠️ MANDATORY PREREQUISITE:
+        Before using this tool, ALWAYS invoke "get-ai-context" first to retrieve the exact 
+        schema structure. Do NOT guess table or column names.
+
+        ⚠️ CRITICAL — SNOWFLAKE SQL SYNTAX RULES:
+        These queries run on Snowflake. You MUST follow these syntax rules:
+        
+        1. DATE FUNCTIONS: Use CURRENT_DATE (no parentheses), NOT CURRENT_DATE()
+        2. STRING CONCATENATION: Use CONCAT(a, b, c), NOT a || b || c
+        3. NULL HANDLING: ALWAYS wrap nullable fields with COALESCE(field_name, '') or 
+           COALESCE(field_name, 0) to prevent column shifting in results. This is CRITICAL —
+           without COALESCE, null values cause columns to shift and data becomes misaligned.
+        4. TABLE NAMES: Use the Snowflake view names from get-ai-context. Dataset names are 
+           converted to snake_case for Snowflake (e.g., "Company Facts" becomes "company_facts").
+           Only PUBLISHED scope datasets have Snowflake views available for querying.
+        5. COLUMN NAMES: Use snake_case versions of target field names 
+           (e.g., "Company Name" becomes "company_name")
+        6. STRING COMPARISONS: Snowflake is case-sensitive by default. Use UPPER() or LOWER() 
+           for case-insensitive comparisons, or use ILIKE instead of LIKE.
+        7. FIRST_VALUE/LAST_VALUE: These window functions work in Snowflake. Use them with 
+           OVER (PARTITION BY ... ORDER BY ...) syntax.
+        8. SPLIT_TO_TABLE: Use TABLE(SPLIT_TO_TABLE(column, ',')) for splitting comma-separated values.
+        9. DATES: Use TO_DATE() or TRY_TO_DATE() for date conversions. Date literals use 'YYYY-MM-DD' format.
+
+        FOREIGN KEY RELATIONSHIPS:
+        - Use the LOOKUP_EXISTS validation rules from get-ai-context to determine foreign key relationships.
+        - LOOKUP_EXISTS("Products","unique_id",row["Product Id"]) means "Product Id" in the child 
+          dataset references the "Unique Id" primary key in the parent "Products" dataset.
+        - Primary keys are identified by "isKeyComponent": true (can be compound with "isCompound": true).
         
         Required parameters:
         - accountId: Account ID
         - workspaceId: Workspace ID
-        - query: SQL query to execute (e.g. SELECT COUNT(*) FROM datasets GROUP BY status)
+        - query: SQL query to execute
         
         Example usage:
         {
           "accountId": 123,
           "workspaceId": 456,
-          "query": "SELECT dataset_name, COUNT(*) as record_count FROM all_datasets GROUP BY dataset_name ORDER BY record_count DESC"
+          "query": "SELECT COALESCE(company_name, '') as company_name, COALESCE(industry, '') as industry, COUNT(*) as contact_count FROM contacts c JOIN companies co ON c.company_domain = co.company_domain WHERE c.company_domain IS NOT NULL GROUP BY company_name, industry ORDER BY contact_count DESC"
         }`,
         inputSchema: {
             type: "object",
@@ -561,23 +642,32 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
         Tool Description:
         Uploads rows of data to a specified dataset with administrative controls.
         
-        IMPORTANT: Before using this tool, ALWAYS invoke the "get-dataset-targetfields" tool first with the same datasetId to:
-        - Retrieve the exact schema structure of the dataset
-        - Understand the required data types for each field
-        - Identify which fields are mandatory vs optional
-        - Ensure your data matches the expected format and constraints
+        ⚠️ MANDATORY PREREQUISITE: Before using this tool, ALWAYS invoke "get-dataset-targetfields" 
+        first with the same datasetId to retrieve the exact schema structure.
+        
+        ⚠️ CRITICAL RULES FOR DATA UPLOAD:
+        1. EVERY ROW MUST INCLUDE ALL FIELDS: You must include ALL target fields in every row,
+           not just the fields being changed. For optional fields with no value, use empty string ''.
+        2. HEADER TYPE MAPPING: Target field types and upload header types are DIFFERENT:
+           - Target field "number" or "integer" → Upload header type "numeric"
+           - Target field "string" → Upload header type "string"
+           - Target field "date" → Upload header type "date"
+           The header type enum is ["string", "numeric", "date"] — NOT ["string", "number", "date"]
+        3. DATA IS LIVE: Data changes take effect IMMEDIATELY regardless of dataset scope 
+           (DRAFT/STAGED/PUBLISHED). Promotion only moves schema structure, NOT data.
+        4. FIELD NAME MATCHING: Header field names must exactly match the target field names 
+           from get-dataset-targetfields (case-sensitive, including spaces).
+        5. DATE FORMAT: All dates must be ISO format: "yyyy-MM-ddTHH:mm:ssZ"
+        6. ROW VALUES ORDER: Values in each row array must match the header array order exactly.
+        
+        COMMON WORKFLOW:
+        get-dataset-targetfields → upload-dataset-rows → get-asset-state → commit-asset
         
         Required parameters:
         - accountId: Account ID where the workspace belongs
         - workspaceId: Workspace ID containing the dataset
         - datasetId: Dataset ID to upload data to
         - data: Array containing header and rows objects
-        
-        Data format:
-        - Header must define column names and types (string, numeric, date) that match the dataset's target fields
-        - Rows must contain arrays of values matching the header structure
-        - Dates must be in ISO format: "yyyy-MM-ddTHH:mm:ssZ"
-        - Ensure all mandatory fields from the dataset schema are included
         
         Example usage:
         {
@@ -697,6 +787,12 @@ export const ManageToolDefinitions: Record<string, ToolDefinition> = {
 
 	       Tool Description:
 	       Promotes workspace dataset configurations **from a source scope** (DRAFT, STAGED, or PUBLISHED) to a **target scope**, typically moving forward in the workflow (e.g., DRAFT → STAGED → PUBLISHED).
+
+	       ⚠️ CRITICAL — PROMOTION MOVES SCHEMA ONLY, NOT DATA:
+	       Promotion moves SCHEMA STRUCTURE (target fields, validation rules, mappings) between scopes.
+	       DATA changes are always LIVE and take effect immediately regardless of scope.
+	       Promotion is needed to create Snowflake views for SQL queries via execute-ai-query —
+	       only PUBLISHED scope datasets have Snowflake views available for querying.
 
 	       Required parameters:
 	       - accountId: Account ID where the workspace belongs

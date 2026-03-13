@@ -7,7 +7,7 @@ export const MessageSchema = z.object({
     jsonrpc: z.literal("2.0"),
     id: z.union([z.number(), z.string()]).optional(),
     method: z.string().optional(),
-    params: z.record(z.unknown()).optional(),
+    params: z.record(z.string(), z.unknown()).optional(),
     result: z.unknown().optional(),
     error: z.object({
         code: z.number(),

@@ -1,5 +1,24 @@
 import { ToolDefinition } from "./BaseToolHandler.js";
 
+/**
+ * VERODAT DESIGN TOOLS — Data Architect Role
+ * 
+ * Purpose: Creating and structuring datasets, defining schemas, building data models.
+ * Use for: Creating datasets, defining target fields, designing entity relationships, testing schemas.
+ * Do NOT use for: Uploading production data, committing assets, promoting schemas, or analytical queries.
+ * 
+ * When all three Verodat servers are available (consume, design, manage):
+ *   - verodat-consume: Data analyst work — querying and reading published data
+ *   - verodat-design:  Data architect work — creating datasets, designing schemas, building data models
+ *   - verodat-manage:  Data engineer work — uploading data, committing assets, promoting schemas, managing environments
+ * 
+ * ENVIRONMENT MODEL:
+ *   DRAFT (Design)    → For building/testing schema. Only TEST data should exist here.
+ *                       Design tools default to DRAFT scope. New datasets are created in DRAFT.
+ *   STAGED (Staging)   → For validating schema changes against sample production data.
+ *   PUBLISHED (Prod)   → Live production environment. Schema must be promoted here for SQL queries to work.
+ *   NOTE: Promotion (DRAFT→STAGED→PUBLISHED) moves SCHEMA ONLY. Data is always live regardless of scope.
+ */
 export const DesignToolDefinitions: Record<string, ToolDefinition> = {
     "get-datasets": {
         name: "get-datasets",
@@ -78,6 +97,15 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
         Tool Description:
         Retrieves actual data records from a dataset to inform design decisions and validate schema design.
         
+        ⚠️ CRITICAL - NULL FIELD HANDLING:
+        When datasets contain null/empty values in fields, the returned data columns can SHIFT, 
+        causing data misalignment. When processing returned data:
+        - ALWAYS use the returned header row to map column positions to field names
+        - Do NOT assume column positions are fixed — null fields may cause columns to shift
+        - When using this data in downstream SQL queries (via execute-ai-query), wrap nullable 
+          fields with COALESCE(field_name, '') to prevent column shifting in results
+        - Validate row lengths match the header count before processing
+        
         Required parameters:
         - datasetId: dataset ID to get data output for
         - workspaceId: Workspace ID to query
@@ -143,6 +171,13 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
         
         Tool Description:
         Retrieves available accounts for the authenticated user to select for dataset design.
+        
+        SERVER ROLE: This is a verodat-design tool (Data Architect role).
+        Use design tools for: creating datasets, defining schemas, building data models.
+        Use verodat-consume for: reading published data, running SQL queries, analysis.
+        Use verodat-manage for: uploading data, committing assets, promoting schemas.
+        
+        ENVIRONMENT: Design tools default to DRAFT scope. Only test data should exist in DRAFT.
         `,
         inputSchema: {
             type: "object",
@@ -318,6 +353,7 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
     "get-ai-context": {
         name: "get-ai-context",
         description: `WHEN TO USE:
+        - ALWAYS call this BEFORE using execute-ai-query — it provides the schema needed to write correct SQL
         - Before designing new datasets to understand existing data structures
         - When planning relationships between datasets
         - When designing complementary datasets that work with existing ones
@@ -326,6 +362,11 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
         
         Tool Description:
         Retrieves comprehensive workspace context to inform dataset design decisions.
+        This returns dataset schemas, field definitions, validation rules, and relationships 
+        that are ESSENTIAL for writing correct SQL queries via execute-ai-query.
+        
+        WORKFLOW: Always call get-ai-context FIRST, then use the schema information 
+        it returns to construct your SQL query for execute-ai-query.
         
         Required parameters:
         - workspaceId: Target workspace ID
@@ -359,30 +400,43 @@ export const DesignToolDefinitions: Record<string, ToolDefinition> = {
         - When auditing data for compliance or quality issues
         - When validating data integrity across datasets
         - When checking for data inconsistencies or anomalies
-        - When performing system-level data operations
+        - When performing cross-dataset joins and aggregations
         
         Tool Description:
-        Executes AI-powered queries for administrative and management purposes.  
+        Executes SQL queries against Snowflake views of published datasets.
 
-        IMPORTANT: 
-        - Before using this tool, ALWAYS invoke the "get-ai-context" tool first with to etrieve the exact schema structure of the data model
-        - When determining foreign key relationships between tables, 
-            - use the LOOKUP_EXISTS validation rules. These act as constraints on the child dataset. 
-            - For example, LOOKUP_EXISTS("Products","unique_id",row["Product Id"]) means that the column "Product Id" is in a child dataset and is referencing the Primary Key of the parent dataset called "Products", 
-            - where the primary key in this table is called "Unique Id". 
-            - The primary key of the parent table can be found from the "isKeyComponent": true. 
-            - Note that the primary key can be a compound key (indicated by "isKeyComponent": true, "isCompound": true).
+        ⚠️ MANDATORY PREREQUISITE:
+        Before using this tool, ALWAYS invoke "get-ai-context" first to retrieve the exact 
+        schema structure. Do NOT guess table or column names.
+        ⚠️ CRITICAL — SNOWFLAKE SQL SYNTAX RULES:
+        These queries run on Snowflake. You MUST follow these syntax rules:
+        
+        1. DATE FUNCTIONS: Use CURRENT_DATE (no parentheses), NOT CURRENT_DATE()
+        2. STRING CONCATENATION: Use CONCAT(a, b, c), NOT a || b || c
+        3. NULL HANDLING: ALWAYS wrap nullable fields with COALESCE(field_name, '') or 
+           COALESCE(field_name, 0) to prevent column shifting in results.
+        4. TABLE NAMES: Use Snowflake view names from get-ai-context (snake_case).
+           Only PUBLISHED scope datasets have Snowflake views.
+        5. COLUMN NAMES: Use snake_case versions of target field names.
+        6. STRING COMPARISONS: Snowflake is case-sensitive. Use ILIKE instead of LIKE.
+        7. FIRST_VALUE/LAST_VALUE: Window functions work with OVER (PARTITION BY ... ORDER BY ...).
+        8. SPLIT_TO_TABLE: Use TABLE(SPLIT_TO_TABLE(column, ',')) for comma-separated values.
+        9. DATES: Use TO_DATE() or TRY_TO_DATE(). Date literals use 'YYYY-MM-DD' format.
+
+        FOREIGN KEY RELATIONSHIPS:
+        - Use LOOKUP_EXISTS validation rules from get-ai-context.
+        - Primary keys identified by "isKeyComponent": true (compound with "isCompound": true).
         
         Required parameters:
         - accountId: Account ID
         - workspaceId: Workspace ID
-        - query: SQL query to execute (e.g. SELECT COUNT(*) FROM datasets GROUP BY status)
+        - query: SQL query to execute
         
         Example usage:
         {
           "accountId": 123,
           "workspaceId": 456,
-          "query": "SELECT dataset_name, COUNT(*) as record_count FROM all_datasets GROUP BY dataset_name ORDER BY record_count DESC"
+          "query": "SELECT COALESCE(company_name, '') as company_name, COUNT(*) as cnt FROM companies GROUP BY company_name ORDER BY cnt DESC"
         }`,
         inputSchema: {
             type: "object",

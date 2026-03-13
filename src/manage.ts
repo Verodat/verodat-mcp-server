@@ -16,7 +16,7 @@ async function main() {
         // Create the server instance
         const server = new Server(
             {
-                name: 'verodat-mcp-server',
+                name: 'verodat-manage',
                 version: '1.0.0',
             },
             {
